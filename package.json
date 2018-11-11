@@ -9,6 +9,7 @@
   "author": "Elyes & Seif",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.5.3",
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "mysql": "^2.16.0"
