@@ -1,0 +1,16 @@
+{
+  "name": "cookmania",
+  "version": "1.0.0",
+  "description": "mini-projet",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Elyes & Seif",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "mysql": "^2.16.0"
+  }
+}
