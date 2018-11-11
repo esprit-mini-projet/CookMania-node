@@ -1,5 +1,6 @@
 const express = require('express')
 const mysql = require('mysql')
+const idGenerator = require('../utils/id_generator')
 
 const router = express.Router()
 
@@ -100,9 +101,7 @@ router.get('/:id', (req, res) => {
 //Create recipe
 router.post('/create', (req, res) => {
 
-    console.log(req.body)
-
-    const recipeId = req.body.id
+    const recipeId = idGenerator.ID('ar')
     const name = req.body.name
     const description = req.body.description
     const calories = req.body.calories
