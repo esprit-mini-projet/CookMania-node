@@ -42,8 +42,8 @@ router.get("/:id", (req, res) => {
 
 //GET user followers and following
 router.get("/following/:user_id", (req, res) => {
-    pool.query("SELECT * FROM following WHERE follower_id = ?", [req.params.user_id], (err, following_rows, fie) => {
-        pool.query("SELECT * FROM following WHERE followed_id = ?", [req.params.user_id], (er, followers_rows, f) => {
+    pool.query("SELECT u.* FROM following f JOIN user u ON f.followed_id = u.id WHERE follower_id = ?", [req.params.user_id], (err, following_rows, fie) => {
+        pool.query("SELECT u.* FROM following f JOIN user u ON f.follower_id = u.id WHERE followed_id = ?", [req.params.user_id], (er, followers_rows, f) => {
             res.status(200)
             res.json({following: following_rows, followers: followers_rows})
         })
@@ -85,14 +85,14 @@ router.post("/insert", (req, res) => {
 //Create a new following
 router.post("/follow/:user_id/:followed_id", (req, res) => {
     pool.query("INSERT INTO following VALUES(?,?)", [req.params.user_id, req.params.followed_id], (err, rows, fields) => {
-        if(rows){
+        if(!err){
             pool.query("UPDATE user SET following = following+1 WHERE id = ?", [req.params.user_id])
             pool.query("UPDATE user SET followers = followers+1 WHERE id = ?", [req.params.followed_id])
             res.status(204)
             res.end()
         }else{
-            res.status(208)
-            res.end()
+            res.sendStatus(500)
+            console.log(err)
         }
     })
 })
@@ -100,13 +100,11 @@ router.post("/follow/:user_id/:followed_id", (req, res) => {
 //Put a recipe in user's favorite
 router.post("/favorite/put/:user_id/:recipe_id", (req, res) => {
     pool.query("INSERT INTO favorite(user_id, recipe_id) VALUES(?, ?)", [req.params.user_id, req.params.recipe_id], (err, rows, fields) => {
-        console.log()
-        if(!rows){
-            res.status(208)
-            res.end()
+        if(err){
+            res.sendStatus(500)
+            console.log(err)
         }else{
-            res.status(204)
-            res.end()
+            res.sendStatus(204)
         }
     })
 })
@@ -121,8 +119,7 @@ router.put("/update/:id", (req, res) => {
         req.body.image_url,
         req.params.id
     ], (err, rows, fields) => {
-        res.status(204)
-        res.end();
+        res.sendStatus(204)
     })
 })
 
@@ -133,8 +130,7 @@ router.delete("/delete/:id", (req, res) => {
     pool.query("DELETE FROM user WHERE id = ?", [
         req.params.id
     ], (err, rows, fields) => {
-        res.status(204)
-        res.end();
+        res.sendStatus(204)
     })
 })
 
@@ -145,24 +141,21 @@ router.delete("/unfollow/:user_id/:followed_id", (req, res) => {
             pool.query("UPDATE user SET following = following-1 WHERE id = ?", [req.params.user_id])
             pool.query("UPDATE user SET followers = followers-1 WHERE id = ?", [req.params.followed_id])
         }
-        res.status(204)
-        res.end()
+        res.sendStatus(204)
     })
 })
 
 //Remove a recipe from favorite
 router.delete("/favorite/delete/:user_id/:recipe_id", (req, res) => {
     pool.query("DELETE FROM favorite WHERE user_id = ? AND recipe_id = ?", [req.params.user_id, req.params.recipe_id], (err, rows, fields) => {
-        res.status(204)
-        res.end()
+        res.sendStatus(204)
     })
 })
 
 //Remove all user's favorite recipes
 router.delete("/favorite/delete/:user_id", (req, res) => {
     pool.query("DELETE FROM favorite WHERE user_id = ?", [req.params.user_id], (err, rows, fields) => {
-        res.status(204)
-        res.end()
+        res.sendStatus(204)
     })
 })
 
