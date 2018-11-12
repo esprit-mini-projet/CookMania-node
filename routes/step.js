@@ -1,10 +1,9 @@
-const express = require('express')
-const mysql = require('mysql')
-const idGenerator = require('../utils/id_generator')
+import { Router } from "express"
+import { createPool } from "mysql"
 
-const router = express.Router()
+const router = Router()
 
-const pool = mysql.createPool({
+const pool = createPool({
     connectionLimit: 10,
     host: "localhost",
     user: "root",
@@ -16,11 +15,11 @@ function getConnection(){
 }
 
 //Get steps by recipeId
-router.get('/:recipeId', (req, res) => {
+router.get("/:recipeId", (req, res) => {
     const queryString = "SELECT * FROM step WHERE recipe_id = ?"
-    getConnection().query(queryString, [req.params.recipeId], (err, rows, fields) => {
+    getConnection().query(queryString, [req.params.recipeId], (err, rows) => {
         if(err){
-            console.log(err);
+            console.log(err)
             res.sendStatus(500)
             return
         }
@@ -30,24 +29,24 @@ router.get('/:recipeId', (req, res) => {
 })
 
 //Create step
-router.post('/create', (req, res) => {
+router.post("/create", (req, res) => {
 
     const recipeId = req.body.recipeId
     const description = req.body.description
     const time = req.body.time
     const image_url = req.body.image_url
 
-    console.log(req.body);
+    console.log(req.body)
     
 
     const queryString = "INSERT INTO step (recipe_id, description, time, image_url) VALUES (?,?,?,?)"
     getConnection().query(queryString, [recipeId, description, time, image_url], (err, rows) => {
         if(err){
-            console.log(err);
+            console.log(err)
             res.sendStatus(500)
             return
         }
-        stepId = rows.insertId
+        const stepId = rows.insertId
         //create ingedients
         const promises = []
         const ingredients = req.body.ingredients
@@ -69,10 +68,10 @@ router.post('/create', (req, res) => {
             res.status(200)
             res.json({id: stepId})
         }, (err) => {
-            console.log(err);
+            console.log(err)
             res.sendStatus(200)
         })
     })
 })
 
-module.exports = router
+export default router
