@@ -36,9 +36,6 @@ router.post("/create", (req, res) => {
     const time = req.body.time
     const image_url = req.body.image_url
 
-    console.log(req.body)
-    
-
     const queryString = "INSERT INTO step (recipe_id, description, time, image_url) VALUES (?,?,?,?)"
     getConnection().query(queryString, [recipeId, description, time, image_url], (err, rows) => {
         if(err){

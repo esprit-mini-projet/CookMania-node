@@ -112,7 +112,7 @@ router.post("/create", (req, res) => {
     const steps = req.body.steps
     const labels = req.body.labels
 
-    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id,url) VALUES(?,?,?,?,?,?,?,?,?,?)"
+    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id,url) VALUES(?,?,?,?,?,?,?,?,?)"
     getConnection().query(queryString, [name,description,calories,servings,imageUrl,views,time,userId,url], (err, rows) => {
         if(err){
             console.log(err)
