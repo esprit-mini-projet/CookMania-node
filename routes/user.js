@@ -17,6 +17,13 @@ function getConnection(){
 
 //GET
 
+router.post("/signin", (req, res) => {
+    pool.query("SELECT * FROM user WHERE email = ? AND password = ?", [req.body.email, req.body.password], (err, rows, fields) => {
+        res.status(200);
+        res.json(rows[0])
+    })
+})
+
 //GET all users
 router.get("/", (req, res) => {
     pool.query("SELECT * FROM user", (err, user_rows, fields) => {
