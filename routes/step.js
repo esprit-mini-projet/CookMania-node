@@ -1,9 +1,9 @@
-import { Router } from "express"
-import { createPool } from "mysql"
+const Router = require("express")
+const mysql = require("mysql")
 
 const router = Router()
 
-const pool = createPool({
+const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
     user: "root",
@@ -74,4 +74,4 @@ router.post("/create", (req, res) => {
     })
 })
 
-export default router
+module.exports = router

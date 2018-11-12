@@ -1,10 +1,9 @@
-import { Router } from "express"
-import { createPool } from "mysql"
-import { ID } from "../utils/id_generator"
+const Router = require("express")
+const mysql = require("mysql")
 
 const router = Router()
 
-const pool = createPool({
+const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
     user: "root",
@@ -101,7 +100,6 @@ router.get("/:id", (req, res) => {
 //Create recipe
 router.post("/create", (req, res) => {
 
-    const recipeId = ID("ar")
     const name = req.body.name
     const description = req.body.description
     const calories = req.body.calories
@@ -114,13 +112,14 @@ router.post("/create", (req, res) => {
     const steps = req.body.steps
     const labels = req.body.labels
 
-    const queryString = "INSERT INTO recipe(id,name,description,calories,servings,image_url,views,time,user_id,url) VALUES(?,?,?,?,?,?,?,?,?,?)"
-    getConnection().query(queryString, [recipeId,name,description,calories,servings,imageUrl,views,time,userId,url], (err) => {
+    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id,url) VALUES(?,?,?,?,?,?,?,?,?,?)"
+    getConnection().query(queryString, [name,description,calories,servings,imageUrl,views,time,userId,url], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
             return
         }
+        const recipeId = rows.insertId
         //create labels
         const promises = []
         for(var i = 0; i < labels.length; i++){
@@ -192,4 +191,4 @@ router.post("/create", (req, res) => {
 })
 
 
-export default router
+module.exports = router
