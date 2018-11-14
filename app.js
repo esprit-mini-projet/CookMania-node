@@ -1,10 +1,12 @@
 const express = require("express")
 const bodyParser = require("body-parser")
+const path = require("path")
 
 const app = express()
 
 app.use(bodyParser.urlencoded({extended:false}))
 app.use(bodyParser.json())
+app.use("/public", express.static(path.join(__dirname, 'public')))
 
 const userRoute = require("./routes/user")
 const recipeRoute = require("./routes/recipe")

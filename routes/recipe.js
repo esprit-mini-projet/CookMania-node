@@ -7,7 +7,9 @@ const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
     user: "root",
-    database: "cookmania"
+    database: "cookmania",
+    port: 8889,
+    password: "root"
 })
 
 function getConnection(){
@@ -17,6 +19,20 @@ function getConnection(){
 //Get all recipes
 router.get("/", (req, res) => {
     const queryString = "SELECT * FROM recipe"
+    getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+
+//Get top rated recipes
+router.get("/top", (req, res) => {
+    const queryString = "SELECT r.*, avg(e.rating) FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
     getConnection().query(queryString, (err, rows) => {
         if(err){
             console.log(err)
@@ -108,12 +124,11 @@ router.post("/create", (req, res) => {
     const views = req.body.views
     const time = req.body.time
     const userId = req.body.userId
-    const url = req.body.url
     const steps = req.body.steps
     const labels = req.body.labels
 
-    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id,url) VALUES(?,?,?,?,?,?,?,?,?)"
-    getConnection().query(queryString, [name,description,calories,servings,imageUrl,views,time,userId,url], (err, rows) => {
+    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id) VALUES(?,?,?,?,?,?,?,?)"
+    getConnection().query(queryString, [name,description,calories,servings,imageUrl,views,time,userId], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
