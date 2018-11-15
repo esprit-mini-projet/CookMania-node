@@ -1,14 +1,15 @@
-const express = require('express')
-const mysql = require('mysql')
-const idGenerator = require('../utils/id_generator')
+const Router = require("express")
+const mysql = require("mysql")
 
-const router = express.Router()
+const router = Router()
 
 const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
     user: "root",
-    database: "cookmania"
+    database: "cookmania",
+    port: 8889,
+    password: "root"
 })
 
 function getConnection(){
@@ -16,11 +17,25 @@ function getConnection(){
 }
 
 //Get all recipes
-router.get('/', (req, res) => {
-    const queryString = "SELECT * FROM recipe"
-    getConnection().query(queryString, (err, rows, fields) => {
+router.get("/", (req, res) => {
+    const queryString = "SELECT r.*, avg(e.rating) FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"
+    getConnection().query(queryString, (err, rows) => {
         if(err){
-            console.log(err);
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+
+//Get top rated recipes
+router.get("/top", (req, res) => {
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
+    getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
             res.sendStatus(500)
             return
         }
@@ -30,28 +45,28 @@ router.get('/', (req, res) => {
 })
 
 //Get a single recipe
-router.get('/:id', (req, res) => {
+router.get("/:id", (req, res) => {
     const queryString = "SELECT * FROM recipe WHERE id = ?"
-    getConnection().query(queryString, [req.params.id], (err, rows, fields) => {
+    getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
-            console.log(err);
+            console.log(err)
             res.sendStatus(500)
             return
         }
         let recipe = rows[0]
         //get user
         const queryString = "SELECT * FROM user WHERE id = ?"
-        getConnection().query(queryString, [recipe.user_id], (err, rows, fields) => {
+        getConnection().query(queryString, [recipe.user_id], (err, rows) => {
             if(err){
-                console.log(err);
+                console.log(err)
                 res.sendStatus(500)
                 return
             }
             recipe.user = rows[0]
             const queryString = "SELECT * FROM label_recipe WHERE recipe_id = ?"
-            getConnection().query(queryString, [recipe.id], (err, labels, fields) => {
+            getConnection().query(queryString, [recipe.id], (err, labels) => {
                 if(err){
-                    console.log(err);
+                    console.log(err)
                     res.sendStatus(500)
                     return
                 }
@@ -60,9 +75,9 @@ router.get('/:id', (req, res) => {
                 })
                 //get steps
                 const queryString = "SELECT * FROM step WHERE recipe_id = ?"
-                getConnection().query(queryString, [recipe.id], (err, steps, fields) => {
+                getConnection().query(queryString, [recipe.id], (err, steps) => {
                     if(err){
-                        console.log(err);
+                        console.log(err)
                         res.sendStatus(500)
                         return
                     }
@@ -72,9 +87,9 @@ router.get('/:id', (req, res) => {
                     for(var i = 0; i < steps.length; i++){
                         const step = steps[i]
                         promises.push(new Promise((resolve, reject) => {
-                            getConnection().query(queryString, [step.id], (err, ingredients, fields) => {
+                            getConnection().query(queryString, [step.id], (err, ingredients) => {
                                 if(err){
-                                    console.log(err);
+                                    console.log(err)
                                     res.sendStatus(500)
                                     reject(err)
                                 }
@@ -88,7 +103,7 @@ router.get('/:id', (req, res) => {
                         res.status(200)
                         res.json(recipe)
                     }, (err) => {
-                        console.log(err);
+                        console.log(err)
                         res.sendStatus(500)
                         return
                     })
@@ -99,9 +114,8 @@ router.get('/:id', (req, res) => {
 })
 
 //Create recipe
-router.post('/create', (req, res) => {
+router.post("/create", (req, res) => {
 
-    const recipeId = idGenerator.ID('ar')
     const name = req.body.name
     const description = req.body.description
     const calories = req.body.calories
@@ -110,17 +124,17 @@ router.post('/create', (req, res) => {
     const views = req.body.views
     const time = req.body.time
     const userId = req.body.userId
-    const url = req.body.url
     const steps = req.body.steps
     const labels = req.body.labels
 
-    const queryString = "INSERT INTO recipe(id,name,description,calories,servings,image_url,views,time,user_id,url) VALUES(?,?,?,?,?,?,?,?,?,?)"
-    getConnection().query(queryString, [recipeId,name,description,calories,servings,imageUrl,views,time,userId,url], (err) => {
+    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id) VALUES(?,?,?,?,?,?,?,?)"
+    getConnection().query(queryString, [name,description,calories,servings,imageUrl,views,time,userId], (err, rows) => {
         if(err){
-            console.log(err);
+            console.log(err)
             res.sendStatus(500)
             return
         }
+        const recipeId = rows.insertId
         //create labels
         const promises = []
         for(var i = 0; i < labels.length; i++){
@@ -129,7 +143,7 @@ router.post('/create', (req, res) => {
                 const queryString = "INSERT INTO label_recipe (recipe_id, label_id) VALUES (?,?)"
                 getConnection().query(queryString, [recipeId, label], (err) => {
                     if(err){
-                        console.log(err);
+                        console.log(err)
                         res.sendStatus(500)
                         reject(err)
                     }
@@ -147,7 +161,7 @@ router.post('/create', (req, res) => {
                     const queryString = "INSERT INTO step (recipe_id, description, time, image_url) VALUES (?,?,?,?)"
                     getConnection().query(queryString, [recipeId, step.description, step.time, step.image_url], (err, rows) => {
                         if(err){
-                            console.log(err);
+                            console.log(err)
                             res.sendStatus(500)
                             reject(err)
                         }
@@ -161,7 +175,7 @@ router.post('/create', (req, res) => {
                                 const queryString = "INSERT INTO ingredient (step_id, name, quantity, unit) VALUES (?,?,?,?)"
                                 getConnection().query(queryString, [step.id, ingredient.name, ingredient.quantity, ingredient.unit], (err) => {
                                     if(err){
-                                        console.log(err);
+                                        console.log(err)
                                         res.sendStatus(500)
                                         reject2(err)
                                     }
@@ -181,11 +195,11 @@ router.post('/create', (req, res) => {
                 res.status(200)
                 res.json({id:recipeId})
             }, (err) => {
-                console.log(err);
+                console.log(err)
                 res.sendStatus(500)
             })
         }, (err) => {
-            console.log(err);
+            console.log(err)
             res.sendStatus(500)
         })
     })

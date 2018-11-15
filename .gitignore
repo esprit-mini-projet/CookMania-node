@@ -1,1 +1,3 @@
 /node_modules/
+.eslint*
+.DS_Store
