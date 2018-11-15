@@ -18,7 +18,7 @@ function getConnection(){
 
 //Get all recipes
 router.get("/", (req, res) => {
-    const queryString = "SELECT * FROM recipe"
+    const queryString = "SELECT r.*, avg(e.rating) FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"
     getConnection().query(queryString, (err, rows) => {
         if(err){
             console.log(err)
@@ -32,7 +32,7 @@ router.get("/", (req, res) => {
 
 //Get top rated recipes
 router.get("/top", (req, res) => {
-    const queryString = "SELECT r.*, avg(e.rating) FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
     getConnection().query(queryString, (err, rows) => {
         if(err){
             console.log(err)
