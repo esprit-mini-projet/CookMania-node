@@ -5,10 +5,11 @@ const idGenerator = require('../utils/id_generator')
 const router = express.Router()
 
 const pool = mysql.createPool({
-    connectionLimit: 10,
-    host: "localhost",
-    user: "root",
-    database: "cookmania_db"
+    host: 'localhost',
+    port: 8889,
+    user: 'root',
+    password: 'root',
+    database: 'cookmania'
 })
 
 function getConnection(){
@@ -19,8 +20,16 @@ function getConnection(){
 
 router.post("/signin", (req, res) => {
     pool.query("SELECT * FROM user WHERE email = ? AND password = ?", [req.body.email, req.body.password], (err, rows, fields) => {
-        res.status(200);
-        res.json(rows[0])
+        if(!err){
+            if(rows.length != 0){
+                res.status(200)
+                res.json(rows[0])
+            }else{
+                res.sendStatus(400)
+            }
+        }else{
+            res.sendStatus(500)
+        }
     })
 })
 
@@ -108,6 +117,54 @@ router.post("/favorite/put/:user_id/:recipe_id", (req, res) => {
         }
     })
 })
+
+//Check if user exist (if not added him)
+router.post("/social/check", (req, res) => {
+    pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
+        if(!err){
+            console.log(rows.length)
+            if(rows.length == 0){
+                pool.query("INSERT INTO user(id, email, username, password, image_url) VALUES(?,?,?,?,?)", [req.body.id, req.body.email, req.body.username, req.body.password, req.body.image_url], (er) => {
+                    if(!err){
+                        pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
+                            if(!err){
+                                res.status(200)
+                                res.json(rows[0])
+                            }else{
+                                res.status(500)
+                                res.json("Error getting user after insert")
+                            }
+                        })
+                    }else{
+                        res.status(500)
+                        res.json("Error inserting user")
+                    }
+                })
+            }else{
+                pool.query("UPDATE user SET(email = ?, username = ?, password = ?, image_url = ?) WHERE id = ?", [req.body.email, req.body.username, req.body.password, req.body.imageurl, req.body.id], (er) => {
+                    if(!err){
+                        pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
+                            if(!err){
+                                res.status(200)
+                                res.json(rows[0])
+                            }else{
+                                res.status(500)
+                                res.json("Error getting user after insert")
+                            }
+                        })
+                    }else{
+                        res.status(500)
+                        res.json("Error updating user")
+                    }
+                })
+            }
+        }else{
+            res.status(500)
+            res.json("error in selecting user")
+        }
+    })
+})
+
 
 //PUT
 //Update User
