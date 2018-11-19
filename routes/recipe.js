@@ -8,8 +8,8 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    port: 8889,
-    password: "root"
+    port: 3306,
+    password: ""
 })
 
 function getConnection(){
@@ -18,8 +18,22 @@ function getConnection(){
 
 //Get all recipes
 router.get("/", (req, res) => {
-    const queryString = "SELECT r.*, avg(e.rating) FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"
     getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+
+//Get recipes by user
+router.get("/user/:id", (req, res) => {
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id"
+    getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
@@ -46,11 +60,15 @@ router.get("/top", (req, res) => {
 
 //Get a single recipe
 router.get("/:id", (req, res) => {
-    const queryString = "SELECT * FROM recipe WHERE id = ?"
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"
     getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
+            return
+        }
+        if(rows.length == 0){
+            res.sendStatus(204)
             return
         }
         let recipe = rows[0]
@@ -192,7 +210,7 @@ router.post("/create", (req, res) => {
                 }))
             }
             Promise.all(promises).then(() => {
-                res.status(200)
+                res.status(202)
                 res.json({id:recipeId})
             }, (err) => {
                 console.log(err)
@@ -205,5 +223,17 @@ router.post("/create", (req, res) => {
     })
 })
 
+//Delete recipe
+router.delete("/:id", (req, res) => {
+    const queryString = "DELETE FROM recipe WHERE id = ?"
+    getConnection().query(queryString, [req.params.id], (err) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.sendStatus(204)
+    })
+})
 
 module.exports = router
