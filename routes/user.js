@@ -75,6 +75,19 @@ router.get("/favorite/recipe/:recipe_id", (req, res) => {
     })
 })
 
+//GET users recipe
+router.get("/recipes/:id", (req, res) => {
+    pool.query("SELECT r.* FROM user u JOIN recipe r on u.id = r.user_id WHERE u.id = ?", [req.params.id], (err, rows, fields) => {
+        if(!err){
+            res.status(200)
+            res.json(rows)
+        }else{
+            res.status(500)
+            res.json("error while fetching user's recipes")
+        }
+    })
+})
+
 //POST
 //Create a new user
 router.post("/insert", (req, res) => {
