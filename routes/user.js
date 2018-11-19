@@ -52,9 +52,44 @@ router.get("/:id", (req, res) => {
 //GET user followers and following
 router.get("/following/:user_id", (req, res) => {
     pool.query("SELECT u.* FROM following f JOIN user u ON f.followed_id = u.id WHERE follower_id = ?", [req.params.user_id], (err, following_rows, fie) => {
-        pool.query("SELECT u.* FROM following f JOIN user u ON f.follower_id = u.id WHERE followed_id = ?", [req.params.user_id], (er, followers_rows, f) => {
+        res.status(200)
+        res.json(following_rows)
+    })
+})
+
+router.get("/followers/:user_id", (req, res) => {
+    pool.query("SELECT * FROM following WHERE followed_id = ?", [req.params.user_id], (er, followings, fields) => {
+        const promises = []
+        for(var i = 0; i < followings.length; i++){
+            const following = followings[i]
+            promises.push(new Promise((resolve, reject) => {
+                pool.query("SELECT * FROM user WHERE id = ?", [following.follower_id], (err, followers, fields) => {
+                    pool.query("SELECT * FROM user WHERE id = ?", [following.followed_id], (e, followeds, fields) => {
+                        if(err || e){
+                            console.log(err);
+                            res.sendStatus(500)
+                            reject(err)
+                        }
+                        if(followers.length != 0){
+                            following.follower = followers[0]
+                        }else{
+                            following.follower = null
+                        }
+
+                        if(followeds.length != 0){
+                            following.following = followeds[0]
+                        }else{
+                            following.following = null
+                        }
+                        resolve("Ok")
+                    })
+                })
+            }))
+        }
+        
+        Promise.all(promises).then(() => {
             res.status(200)
-            res.json({following: following_rows, followers: followers_rows})
+            res.json(followings)
         })
     })
 })

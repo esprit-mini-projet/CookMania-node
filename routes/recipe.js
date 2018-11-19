@@ -4,12 +4,11 @@ const mysql = require("mysql")
 const router = Router()
 
 const pool = mysql.createPool({
-    connectionLimit: 10,
-    host: "localhost",
-    user: "root",
-    database: "cookmania",
-    port: 3306,
-    password: ""
+    host: 'localhost',
+    port: 8889,
+    user: 'root',
+    password: 'root',
+    database: 'cookmania'
 })
 
 function getConnection(){
