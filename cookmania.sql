@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le :  jeu. 15 nov. 2018 à 20:06
+-- Généré le :  lun. 19 nov. 2018 à 13:43
 -- Version du serveur :  5.7.23
 -- Version de PHP :  7.2.10
 
@@ -38,21 +38,6 @@ CREATE TABLE IF NOT EXISTS `experience` (
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`,`recipe_id`),
   KEY `exp_recipe` (`recipe_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `favorite`
---
-
-DROP TABLE IF EXISTS `favorite`;
-CREATE TABLE IF NOT EXISTS `favorite` (
-  `user_id` varchar(128) NOT NULL,
-  `recipe_id` int(11) NOT NULL,
-  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`,`recipe_id`),
-  KEY `fav_recipe` (`recipe_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -98,9 +83,7 @@ INSERT INTO `ingredient` (`id`, `step_id`, `name`, `quantity`, `unit`) VALUES
 (5, 6, 'egg', 2, 3),
 (6, 6, 'cheese', 1, 3),
 (9, 8, 'salt', 200, 2),
-(10, 8, 'plate', 1, 0),
-(11, 9, 'cheese', 1, 3),
-(12, 9, 'egg', 2, 3);
+(10, 8, 'plate', 1, 0);
 
 -- --------------------------------------------------------
 
@@ -130,10 +113,7 @@ INSERT INTO `label_recipe` (`recipe_id`, `label_id`) VALUES
 (3, 5),
 (4, 1),
 (4, 2),
-(4, 5),
-(5, 1),
-(5, 2),
-(5, 5);
+(4, 5);
 
 -- --------------------------------------------------------
 
@@ -151,6 +131,7 @@ CREATE TABLE IF NOT EXISTS `recipe` (
   `image_url` text NOT NULL,
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `views` int(11) NOT NULL,
+  `favorites` int(11) NOT NULL,
   `time` int(11) NOT NULL,
   `user_id` varchar(128) NOT NULL,
   PRIMARY KEY (`id`)
@@ -160,12 +141,11 @@ CREATE TABLE IF NOT EXISTS `recipe` (
 -- Déchargement des données de la table `recipe`
 --
 
-INSERT INTO `recipe` (`id`, `name`, `description`, `calories`, `servings`, `image_url`, `date`, `views`, `time`, `user_id`) VALUES
-(1, 'Spaghetti', 'awesome spaghetti', 253, 4, '1.jpg', '2018-11-11 20:16:19', 2, 30, 'au_1541965560996N3V6L'),
-(2, 'Pizza Italienne', 'hey it\'s me mario!', 560, 1, '2.jpg', '2018-11-11 20:16:19', 65, 22, 'au_1541965560996N3V6L'),
-(3, 'omelette', 'very yummy', 233, 1, '3.jpg', '2018-11-11 23:41:13', 3, 10, '1'),
-(4, 'omelette', 'very yummy', 233, 1, '4.jpg', '2018-11-11 23:49:14', 3, 10, '1'),
-(5, 'omelette', 'very yummy', 233, 1, '5.jpg', '2018-11-12 18:11:46', 3, 10, '1');
+INSERT INTO `recipe` (`id`, `name`, `description`, `calories`, `servings`, `image_url`, `date`, `views`, `favorites`, `time`, `user_id`) VALUES
+(1, 'Spaghetti', 'awesome spaghetti', 253, 4, '1.jpg', '2018-11-11 20:16:19', 2, 0, 30, 'au_1541965560996N3V6L'),
+(2, 'Pizza Italienne', 'hey it\'s me mario!', 560, 1, '2.jpg', '2018-11-11 20:16:19', 65, 0, 22, 'au_1541965560996N3V6L'),
+(3, 'omelette', 'very yummy', 233, 1, '3.jpg', '2018-11-11 23:41:13', 3, 0, 10, '1'),
+(4, 'omelette', 'very yummy', 233, 1, '4.jpg', '2018-11-11 23:49:14', 3, 0, 10, '1');
 
 -- --------------------------------------------------------
 
@@ -194,7 +174,6 @@ INSERT INTO `step` (`id`, `recipe_id`, `description`, `time`, `image_url`) VALUE
 (5, 3, 'break eggs', 0, 'www.haha.com'),
 (6, 4, 'break eggs', 0, 'www.haha.com'),
 (8, 4, 'put in plate', 0, 'www.plate.com'),
-(9, 5, 'break eggs', 0, 'www.haha.com'),
 (10, 4, 'eat', 0, 'www.eat.com');
 
 -- --------------------------------------------------------
@@ -233,13 +212,6 @@ INSERT INTO `user` (`id`, `username`, `email`, `password`, `date`, `image_url`, 
 ALTER TABLE `experience`
   ADD CONSTRAINT `exp_recipe` FOREIGN KEY (`recipe_id`) REFERENCES `recipe` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `exp_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `favorite`
---
-ALTER TABLE `favorite`
-  ADD CONSTRAINT `fav_recipe` FOREIGN KEY (`recipe_id`) REFERENCES `recipe` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fav_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `following`
