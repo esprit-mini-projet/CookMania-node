@@ -8,7 +8,7 @@ const pool = mysql.createPool({
     port: 8889,
     user: 'root',
     password: 'root',
-    database: 'cookmania_db'
+    database: 'cookmania'
 })
 
 function getConnection(){
