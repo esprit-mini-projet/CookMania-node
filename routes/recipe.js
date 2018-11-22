@@ -73,6 +73,33 @@ router.get("/label/:label", (req, res) => {
     })
 })
 
+//Get periodic suggestions
+router.get("/suggestions", (req, res) => {
+    const queryString = "SELECT * from periodic_suggestions"
+    getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        let title = rows[0].title
+        let label_id = rows[0].label_id
+        const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r inner join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY (IFNULL(AVG(e.rating), 0) + (r.favorites / r.views) * 5) DESC LIMIT 4"
+        getConnection().query(queryString, [label_id], (err, rows) => {
+            if(err){
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+            res.status(200)
+            res.json({
+                title: title,
+                recipes: rows
+            })
+        })
+    })
+})
+
 //Get a single recipe
 router.get("/:id", (req, res) => {
     const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"

@@ -4,7 +4,10 @@ const dict = {
     2: "Easy",
     3: "Fast",
     4: "Vegetarian",
-    5: "For Kids"
+    5: "For Kids",
+    6: "Breakfast",
+    7: "Dinner",
+    8: "Date Night"
 }
 
 const getKey = (label) => {
