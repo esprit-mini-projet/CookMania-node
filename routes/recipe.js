@@ -1,14 +1,16 @@
 const Router = require("express")
 const mysql = require("mysql")
+const Label = require("../models/label")
 
 const router = Router()
 
 const pool = mysql.createPool({
-    host: 'localhost',
+    connectionLimit: 10,
+    host: "localhost",
+    user: "root",
+    database: "cookmania",
     port: 8889,
-    user: 'root',
-    password: 'root',
-    database: 'cookmania'
+    password: "root"
 })
 
 function getConnection(){
@@ -57,6 +59,47 @@ router.get("/top", (req, res) => {
     })
 })
 
+//Get recipes by label
+router.get("/label/:label", (req, res) => {
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r left join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
+    getConnection().query(queryString, [Label.getKey(req.params.label)], (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+
+//Get periodic suggestions
+router.get("/suggestions", (req, res) => {
+    const queryString = "SELECT * from periodic_suggestions"
+    getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        let title = rows[0].title
+        let label_id = rows[0].label_id
+        const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r inner join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY (IFNULL(AVG(e.rating), 0) + (r.favorites / r.views) * 5) DESC LIMIT 4"
+        getConnection().query(queryString, [label_id], (err, rows) => {
+            if(err){
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+            res.status(200)
+            res.json({
+                title: title,
+                recipes: rows
+            })
+        })
+    })
+})
+
 //Get a single recipe
 router.get("/:id", (req, res) => {
     const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"
@@ -88,7 +131,7 @@ router.get("/:id", (req, res) => {
                     return
                 }
                 recipe.labels = labels.map((value) => {
-                    return value.label_id
+                    return Label.dict[value.label_id]
                 })
                 //get steps
                 const queryString = "SELECT * FROM step WHERE recipe_id = ?"
@@ -155,7 +198,7 @@ router.post("/create", (req, res) => {
         //create labels
         const promises = []
         for(var i = 0; i < labels.length; i++){
-            const label = labels[i]
+            const label = Label.getKey(labels[i])
             promises.push(new Promise((resolve, reject) => {
                 const queryString = "INSERT INTO label_recipe (recipe_id, label_id) VALUES (?,?)"
                 getConnection().query(queryString, [recipeId, label], (err) => {
