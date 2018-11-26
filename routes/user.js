@@ -6,9 +6,7 @@ const router = express.Router()
 
 const pool = mysql.createPool({
     host: 'localhost',
-    port: 8889,
     user: 'root',
-    password: 'root',
     database: 'cookmania'
 })
 
@@ -163,6 +161,33 @@ router.post("/favorite/put/:user_id/:recipe_id", (req, res) => {
         }else{
             res.sendStatus(204)
         }
+    })
+})
+
+//add user if inexistant
+router.post("/social/add", (req, res) => {
+    let queryString = "SELECT * FROM user WHERE id = ?"
+    getConnection().query(queryString, [req.body.id], (err, rows) => {
+        if(err){
+            console.log(err);
+            res.sendStatus(500)
+            return
+        }
+        if(rows.length != 0){
+            res.status(200)
+            res.json({id:req.body.id})
+            return
+        }
+        let queryString = "INSERT INTO user(id, email, username, password, image_url) VALUES(?,?,?,?,?)"
+        getConnection().query(queryString, [req.body.id, req.body.email, req.body.username, req.body.password, req.body.image_url], (err, rows) => {
+            if(err){
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+            res.status(202)
+            res.json({id:req.body.id})
+        })
     })
 })
 
