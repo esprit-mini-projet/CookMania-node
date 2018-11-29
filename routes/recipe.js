@@ -17,6 +17,27 @@ function getConnection(){
     return pool
 }
 
+//add to recipe Favorite count
+router.put("/addFavorites/:recipe_id", (req, res) => {
+    pool.query("UPDATE recipe SET favorites = favorites + 1 WHERE id = ?", [req.params.recipe_id], (err, rows, fields) => {
+        res.sendStatus(200)
+    })
+})
+
+//remove from recipe Favorite count
+router.put("/removeFavorites/:recipe_id", (req, res) => {
+    pool.query("UPDATE recipe SET favorites = favorites - 1 WHERE id = ?", [req.params.recipe_id], (err, rows, fields) => {
+        res.sendStatus(200)
+    })
+})
+
+//add to recipe views count
+router.put("/addViews/:recipe_id", (req, res) => {
+    pool.query("UPDATE recipe SET views = views + 1 WHERE id = ?", [req.params.recipe_id], (err, rows, fields) => {
+        res.sendStatus(200)
+    })
+})
+
 //Get all recipes
 router.get("/", (req, res) => {
     const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"

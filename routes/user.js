@@ -295,7 +295,6 @@ router.put("/update/:id", (req, res) => {
     })
 })
 
-
 //DELETE
 //delete a user by id
 router.delete("/delete/:id", (req, res) => {
