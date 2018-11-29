@@ -56,4 +56,15 @@ router.get("/recipe/:recipeID", (req, res) => {
     })
 })
 
+router.post("/add", (req, res) => {
+    pool.query("INSERT INTO experience(user_id, recipe_id, rating, comment, image_url) VALUES(?, ?, ?, ?, ?)", [req.body.user_id, req.body.recipe_id, req.body.rating, req.body.comment, req.body.image_url], (err, rows, fields) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.sendStatus(200)
+    })
+})
+
 module.exports = router
