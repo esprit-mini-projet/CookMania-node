@@ -17,7 +17,8 @@ function getConnection(){
 //GET
 
 router.post("/signin", (req, res) => {
-    pool.query("SELECT * FROM user WHERE email = ? AND password = ?", [req.body.email, req.body.password], (err, rows, fields) => {
+    let queryString = "SELECT * FROM user WHERE email = ? AND password = ? AND SUBSTR(id, 1, 2) = 'au'";
+    pool.query(queryString, [req.body.email, req.body.password], (err, rows, fields) => {
         if(!err){
             if(rows.length != 0){
                 res.status(200)
@@ -132,6 +133,11 @@ router.post("/insert", (req, res) => {
         req.body.password,
         req.body.image_url
         ], (err, rows, fields) => {
+            if(err){
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
             res.status(200)
             res.json({id: id})
         })
@@ -164,30 +170,18 @@ router.post("/favorite/put/:user_id/:recipe_id", (req, res) => {
     })
 })
 
-//add user if inexistant
-router.post("/social/add", (req, res) => {
-    let queryString = "SELECT * FROM user WHERE id = ?"
-    getConnection().query(queryString, [req.body.id], (err, rows) => {
+//check email
+router.get("/check_email/:email", (req, res) => {
+    let queryString = "SELECT * FROM user WHERE email = ? AND SUBSTR(id, 1, 2) = 'au'"
+    getConnection().query(queryString, [req.params.email], (err, rows) => {
         if(err){
             console.log(err);
             res.sendStatus(500)
             return
         }
-        if(rows.length != 0){
-            res.status(200)
-            res.json({id:req.body.id})
-            return
-        }
-        let queryString = "INSERT INTO user(id, email, username, password, image_url) VALUES(?,?,?,?,?)"
-        getConnection().query(queryString, [req.body.id, req.body.email, req.body.username, req.body.password, req.body.image_url], (err, rows) => {
-            if(err){
-                console.log(err)
-                res.sendStatus(500)
-                return
-            }
-            res.status(202)
-            res.json({id:req.body.id})
-        })
+        let result = rows.length == 0 ? false : true
+        res.status(200)
+        res.json({result:result})
     })
 })
 
