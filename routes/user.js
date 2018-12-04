@@ -5,9 +5,12 @@ const idGenerator = require('../utils/id_generator')
 const router = express.Router()
 
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    database: 'cookmania'
+    connectionLimit: 10,
+    host: "localhost",
+    user: "root",
+    database: "cookmania",
+    port: 8889,
+    password: "root"
 })
 
 function getConnection(){
@@ -49,15 +52,54 @@ router.get("/:id", (req, res) => {
 })
 
 //GET user followers and following
-router.get("/following/:user_id", (req, res) => {
+/*router.get("/following/:user_id", (req, res) => {
     pool.query("SELECT u.* FROM following f JOIN user u ON f.followed_id = u.id WHERE follower_id = ?", [req.params.user_id], (err, following_rows, fie) => {
         res.status(200)
         res.json(following_rows)
     })
-})
+})*/
 
+//GET user followers
 router.get("/followers/:user_id", (req, res) => {
     pool.query("SELECT * FROM following WHERE followed_id = ?", [req.params.user_id], (er, followings, fields) => {
+        const promises = []
+        for(var i = 0; i < followings.length; i++){
+            const following = followings[i]
+            promises.push(new Promise((resolve, reject) => {
+                pool.query("SELECT * FROM user WHERE id = ?", [following.follower_id], (err, followers, fields) => {
+                    pool.query("SELECT * FROM user WHERE id = ?", [following.followed_id], (e, followeds, fields) => {
+                        if(err || e){
+                            console.log(err);
+                            res.sendStatus(500)
+                            reject(err)
+                        }
+                        if(followers.length != 0){
+                            following.follower = followers[0]
+                        }else{
+                            following.follower = null
+                        }
+
+                        if(followeds.length != 0){
+                            following.following = followeds[0]
+                        }else{
+                            following.following = null
+                        }
+                        resolve("Ok")
+                    })
+                })
+            }))
+        }
+        
+        Promise.all(promises).then(() => {
+            res.status(200)
+            res.json(followings)
+        })
+    })
+})
+
+//GET user following
+router.get("/following/:user_id", (req, res) => {
+    pool.query("SELECT * FROM following WHERE follower_id = ?", [req.params.user_id], (er, followings, fields) => {
         const promises = []
         for(var i = 0; i < followings.length; i++){
             const following = followings[i]
@@ -111,7 +153,7 @@ router.get("/favorite/recipe/:recipe_id", (req, res) => {
 
 //GET users recipe
 router.get("/recipes/:id", (req, res) => {
-    pool.query("SELECT r.* FROM user u JOIN recipe r on u.id = r.user_id WHERE u.id = ?", [req.params.id], (err, rows, fields) => {
+    pool.query("SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM user u JOIN recipe r on u.id = r.user_id LEFT JOIN experience e ON r.id = e.recipe_id WHERE u.id = ? GROUP BY r.id ", [req.params.id], (err, rows, fields) => {
         if(!err){
             res.status(200)
             res.json(rows)
@@ -144,10 +186,10 @@ router.post("/insert", (req, res) => {
 })
 
 //Create a new following
-router.post("/follow/:user_id/:followed_id", (req, res) => {
-    pool.query("INSERT INTO following VALUES(?,?)", [req.params.user_id, req.params.followed_id], (err, rows, fields) => {
+router.post("/follow/:follower_id/:followed_id", (req, res) => {
+    pool.query("INSERT INTO following(follower_id, followed_id) VALUES(?,?)", [req.params.follower_id, req.params.followed_id], (err, rows, fields) => {
         if(!err){
-            pool.query("UPDATE user SET following = following+1 WHERE id = ?", [req.params.user_id])
+            pool.query("UPDATE user SET following = following+1 WHERE id = ?", [req.params.follower_id])
             pool.query("UPDATE user SET followers = followers+1 WHERE id = ?", [req.params.followed_id])
             res.status(204)
             res.end()
@@ -247,7 +289,6 @@ router.put("/update/:id", (req, res) => {
     })
 })
 
-
 //DELETE
 //delete a user by id
 router.delete("/delete/:id", (req, res) => {
@@ -259,10 +300,10 @@ router.delete("/delete/:id", (req, res) => {
 })
 
 //Delete a following
-router.delete("/unfollow/:user_id/:followed_id", (req, res) => {
-    pool.query("DELETE FROM following WHERE follower_id = ? AND followed_id = ?", [req.params.user_id, req.params.followed_id], (err, rows, fields) => {
+router.delete("/unfollow/:follower_id/:followed_id", (req, res) => {
+    pool.query("DELETE FROM following WHERE follower_id = ? AND followed_id = ?", [req.params.follower_id, req.params.followed_id], (err, rows, fields) => {
         if(rows.affectedRows != 0){
-            pool.query("UPDATE user SET following = following-1 WHERE id = ?", [req.params.user_id])
+            pool.query("UPDATE user SET following = following-1 WHERE id = ?", [req.params.follower_id])
             pool.query("UPDATE user SET followers = followers-1 WHERE id = ?", [req.params.followed_id])
         }
         res.sendStatus(204)
