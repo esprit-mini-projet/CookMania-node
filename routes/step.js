@@ -7,7 +7,9 @@ const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
     user: "root",
-    database: "cookmania"
+    database: "cookmania",
+    password: "root",
+    port: 8889
 })
 
 function getConnection(){

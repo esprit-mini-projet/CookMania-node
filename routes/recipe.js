@@ -8,7 +8,9 @@ const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
     user: "root",
-    database: "cookmania"
+    database: "cookmania",
+    password: "root",
+    port: 8889
 })
 
 function getConnection(){
@@ -100,8 +102,12 @@ router.get("/suggestions", (req, res) => {
 
 //Get a single recipe
 router.get("/:id", (req, res) => {
+    getRecipeById(req.params.id, res)
+})
+
+const getRecipeById = (id, res) => {
     const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"
-    getConnection().query(queryString, [req.params.id], (err, rows) => {
+    getConnection().query(queryString, [id], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
@@ -169,7 +175,7 @@ router.get("/:id", (req, res) => {
             })
         })
     })
-})
+}
 
 //Create recipe
 router.post("/create", (req, res) => {
@@ -178,15 +184,14 @@ router.post("/create", (req, res) => {
     const description = req.body.description
     const calories = req.body.calories
     const servings = req.body.servings
-    const imageUrl = req.body.imageUrl
-    const views = req.body.views
+    const imageUrl = req.body.image_url
     const time = req.body.time
-    const userId = req.body.userId
+    const user = req.body.user
     const steps = req.body.steps
     const labels = req.body.labels
 
-    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id) VALUES(?,?,?,?,?,?,?,?)"
-    getConnection().query(queryString, [name,description,calories,servings,imageUrl,views,time,userId], (err, rows) => {
+    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id, favorites) VALUES(?,?,?,?,?,?,?,?,?)"
+    getConnection().query(queryString, [name,description,calories,servings,imageUrl,0,time,user.id, 0], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
@@ -250,8 +255,7 @@ router.post("/create", (req, res) => {
                 }))
             }
             Promise.all(promises).then(() => {
-                res.status(202)
-                res.json({id:recipeId})
+                getRecipeById(recipeId, res)
             }, (err) => {
                 console.log(err)
                 res.sendStatus(500)
