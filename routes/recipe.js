@@ -4,6 +4,7 @@ const Label = require("../models/label")
 const formidable = require('formidable')
 const uuidv4 = require('uuid/v4');
 var fs = require('fs');
+const Unit = require("../models/unit")
 
 const router = Router()
 
@@ -160,7 +161,14 @@ const getRecipeById = (id, res) => {
                                     res.sendStatus(500)
                                     reject(err)
                                 }
-                                step.ingredients = ingredients
+                                step.ingredients = ingredients.map((value) => {
+                                    return {
+                                        id: value.id,
+                                        name: value.name,
+                                        quantity: value.quantity,
+                                        unit: Unit.dict[value.unit]
+                                    }
+                                })
                                 resolve("sucess")
                             })
                         }))
@@ -239,7 +247,7 @@ router.post("/create", (req, res) => {
                             const ingredient = ingredients[i]
                             promises.push(new Promise((resolve2, reject2) => {
                                 const queryString = "INSERT INTO ingredient (step_id, name, quantity, unit) VALUES (?,?,?,?)"
-                                getConnection().query(queryString, [step.id, ingredient.name, ingredient.quantity, ingredient.unit], (err) => {
+                                getConnection().query(queryString, [step.id, ingredient.name, ingredient.quantity, Unit.getKey(ingredient.unit)], (err) => {
                                     if(err){
                                         console.log(err)
                                         res.sendStatus(500)
