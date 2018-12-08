@@ -270,6 +270,64 @@ router.post("/create", (req, res) => {
     })
 })
 
+router.post("/add", (req, res) => {
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+        var oldpath = files.image.path;
+        var newFileName = uuidv4() + ".png"
+        var newpath = './public/images/' +  newFileName
+        fs.rename(oldpath, newpath, function (err) {
+            if (err) {
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+            const name = fields.name
+            const description = fields.description
+            const calories = fields.calories
+            const servings = fields.servings
+            const time = fields.time
+            const user_id = fields.user_id
+
+            const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id, favorites) VALUES(?,?,?,?,?,?,?,?,?)"
+            getConnection().query(queryString, [name,description,calories,servings,newFileName,0,time,user_id, 0], (err, rows) => {
+                if(err){
+                    console.log(err)
+                    res.sendStatus(500)
+                    fs.unlinkSync(newpath)
+                    return
+                }
+                const recipeId = rows.insertId
+                //create labels
+                const labels = JSON.parse(fields.labels)
+                console.log(labels);
+                const promises = []
+                for(var i = 0; i < labels.length; i++){
+                    const label = Label.getKey(labels[i])
+                    promises.push(new Promise((resolve, reject) => {
+                        const queryString = "INSERT INTO label_recipe (recipe_id, label_id) VALUES (?,?)"
+                        getConnection().query(queryString, [recipeId, label], (err) => {
+                            if(err){
+                                reject(err)
+                            }
+                            resolve("ok")
+                        })
+                    }))
+                }
+                Promise.all(promises).then(() => {
+                    res.status(200)
+                    res.json(recipeId)
+                }, (err) => {
+                    console.log(err)
+                    res.sendStatus(500)
+                    fs.unlinkSync(newpath)
+                    getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])
+                })
+            })
+        })
+    })
+})
+
 //Delete recipe
 router.delete("/:id", (req, res) => {
     const queryString = "DELETE FROM recipe WHERE id = ?"
