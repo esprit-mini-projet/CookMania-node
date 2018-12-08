@@ -126,7 +126,7 @@ const getRecipeById = (id, res) => {
                 res.sendStatus(500)
                 return
             }
-            recipe.user = rows[0]
+            recipe.user_id = rows[0].id
             const queryString = "SELECT * FROM label_recipe WHERE recipe_id = ?"
             getConnection().query(queryString, [recipe.id], (err, labels) => {
                 if(err){
