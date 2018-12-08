@@ -1,6 +1,9 @@
 const Router = require("express")
 const mysql = require("mysql")
 const Label = require("../models/label")
+const formidable = require('formidable')
+const uuidv4 = require('uuid/v4');
+var fs = require('fs');
 
 const router = Router()
 
