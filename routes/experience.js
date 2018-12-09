@@ -1,14 +1,18 @@
 const express = require('express')
 const mysql = require('mysql')
+const formidable = require('formidable')
+const uuidv4 = require('uuid/v4');
+var fs = require('fs');
 
 const router = express.Router()
 
 const pool = mysql.createPool({
-    host: 'localhost',
-    port: 8889,
-    user: 'root',
-    password: 'root',
-    database: 'cookmania'
+    connectionLimit: 10,
+    host: "localhost",
+    user: "root",
+    database: "cookmania",
+    //port: 8889,
+    //password: "root"
 })
 
 function getConnection(){
@@ -54,6 +58,30 @@ router.get("/recipe/:recipeID", (req, res) => {
             res.json(experiences)
         })
     })
+})
+
+router.post("/add", (req, res) => {
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+      var oldpath = files.image.path;
+      var newFileName = uuidv4() + ".png"
+      var newpath = './public/images/' +  newFileName
+      fs.rename(oldpath, newpath, function (err) {
+        if (err) {
+            console.log(err)
+            res.sendStatus(500)
+            return
+        } 
+        pool.query("INSERT INTO experience(user_id, recipe_id, rating, comment, image_url) VALUES(?, ?, ?, ?, ?)", [fields.user_id, fields.recipe_id, fields.rating, fields.comment, newFileName], (er, rows, fields) => {
+            if(er){
+                console.log(er)
+                res.sendStatus(500)
+                return
+            }
+            res.sendStatus(200)
+        })
+      })
+ });
 })
 
 module.exports = router
