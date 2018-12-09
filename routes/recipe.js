@@ -9,7 +9,9 @@ const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
     user: "root",
-    database: "cookmania"
+    database: "cookmania",
+    //port: 8889,
+    //password: "root"
 })
 
 function getConnection(){
@@ -69,6 +71,34 @@ router.get("/user/:id", (req, res) => {
 router.get("/top", (req, res) => {
     const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
     getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+
+//GET all recipies sorted by rating
+router.get("/all/Top", (req, res) => {
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC"
+    getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+
+//Get all recipes by label
+router.get("/all/:label", (req, res) => {
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r left join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC"
+    getConnection().query(queryString, [Label.getKey(req.params.label)], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
