@@ -1,5 +1,8 @@
 const Router = require("express")
 const mysql = require("mysql")
+const formidable = require('formidable')
+const uuidv4 = require('uuid/v4');
+var fs = require('fs');
 
 const router = Router()
 
@@ -31,18 +34,42 @@ router.get("/:recipeId", (req, res) => {
 })
 
 //Create step
-router.post("/create", (req, res) => {
+router.post("/add", (req, res) => {
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+        if(files.image != undefined){
+            var oldpath = files.image.path;
+            var newFileName = uuidv4() + ".png"
+            var newpath = './public/images/' +  newFileName
+            fs.rename(oldpath, newpath, function (err) {
+                if (err) {
+                    console.log(err)
+                    res.sendStatus(500)
+                    getConnection().query("DELETE FROM recipe WHERE id = ?", [fields.recipe_id])
+                    return
+                }
+                addStep(newFileName, fields, res)
+            })
+        }else{
+            addStep("", fields, res)
+        }
+    })
+})
 
-    const recipeId = req.body.recipeId
-    const description = req.body.description
-    const time = req.body.time
-    const image_url = req.body.image_url
+const addStep = (fileName, fields, res) => {
+    const recipeId = fields.recipe_id
+    const description = fields.description
+    const time = fields.time
 
     const queryString = "INSERT INTO step (recipe_id, description, time, image_url) VALUES (?,?,?,?)"
-    getConnection().query(queryString, [recipeId, description, time, image_url], (err, rows) => {
+    getConnection().query(queryString, [recipeId, description, time, fileName], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
+            getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])
+            if(fileName != ""){
+                fs.unlinkSync("./public/images/" + fileName)
+            }
             return
         }
         const stepId = rows.insertId
@@ -55,8 +82,6 @@ router.post("/create", (req, res) => {
                 const queryString = "INSERT INTO ingredient (step_id, name, quantity, unit) VALUES (?,?,?,?)"
                 getConnection().query(queryString, [stepId, ingredient.name, ingredient.quantity, ingredient.unit], (err) => {
                     if(err){
-                        console.log(err)
-                        res.sendStatus(500)
                         reject(err)
                     }
                     resolve("ok")
@@ -64,13 +89,16 @@ router.post("/create", (req, res) => {
             }))
         }
         Promise.all(promises).then(() => {
-            res.status(200)
-            res.json({id: stepId})
+            res.sendStatus(200)
         }, (err) => {
             console.log(err)
-            res.sendStatus(200)
+            res.sendStatus(500)
+            getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])
+            if(fileName != ""){
+                fs.unlinkSync("./public/images/" + fileName)
+            }
         })
     })
-})
+}
 
 module.exports = router

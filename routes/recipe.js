@@ -1,6 +1,9 @@
 const Router = require("express")
 const mysql = require("mysql")
 const Label = require("../models/label")
+const formidable = require('formidable')
+const uuidv4 = require('uuid/v4');
+var fs = require('fs');
 const Unit = require("../models/unit")
 
 const router = Router()
@@ -152,8 +155,12 @@ router.get("/suggestions", (req, res) => {
 
 //Get a single recipe
 router.get("/:id", (req, res) => {
+    getRecipeById(req.params.id, res)
+})
+
+const getRecipeById = (id, res) => {
     const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"
-    getConnection().query(queryString, [req.params.id], (err, rows) => {
+    getConnection().query(queryString, [id], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
@@ -172,7 +179,7 @@ router.get("/:id", (req, res) => {
                 res.sendStatus(500)
                 return
             }
-            recipe.user = rows[0]
+            recipe.user_id = rows[0].id
             const queryString = "SELECT * FROM label_recipe WHERE recipe_id = ?"
             getConnection().query(queryString, [recipe.id], (err, labels) => {
                 if(err){
@@ -228,7 +235,7 @@ router.get("/:id", (req, res) => {
             })
         })
     })
-})
+}
 
 //Create recipe
 router.post("/create", (req, res) => {
@@ -237,15 +244,14 @@ router.post("/create", (req, res) => {
     const description = req.body.description
     const calories = req.body.calories
     const servings = req.body.servings
-    const imageUrl = req.body.imageUrl
-    const views = req.body.views
+    const imageUrl = req.body.image_url
     const time = req.body.time
-    const userId = req.body.userId
+    const user = req.body.user
     const steps = req.body.steps
     const labels = req.body.labels
 
-    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id) VALUES(?,?,?,?,?,?,?,?)"
-    getConnection().query(queryString, [name,description,calories,servings,imageUrl,views,time,userId], (err, rows) => {
+    const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id, favorites) VALUES(?,?,?,?,?,?,?,?,?)"
+    getConnection().query(queryString, [name,description,calories,servings,imageUrl,0,time,user.id, 0], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
@@ -309,8 +315,7 @@ router.post("/create", (req, res) => {
                 }))
             }
             Promise.all(promises).then(() => {
-                res.status(202)
-                res.json({id:recipeId})
+                getRecipeById(recipeId, res)
             }, (err) => {
                 console.log(err)
                 res.sendStatus(500)
@@ -318,6 +323,64 @@ router.post("/create", (req, res) => {
         }, (err) => {
             console.log(err)
             res.sendStatus(500)
+        })
+    })
+})
+
+router.post("/add", (req, res) => {
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+        var oldpath = files.image.path;
+        var newFileName = uuidv4() + ".png"
+        var newpath = './public/images/' +  newFileName
+        fs.rename(oldpath, newpath, function (err) {
+            if (err) {
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+            const name = fields.name
+            const description = fields.description
+            const calories = fields.calories
+            const servings = fields.servings
+            const time = fields.time
+            const user_id = fields.user_id
+
+            const queryString = "INSERT INTO recipe(name,description,calories,servings,image_url,views,time,user_id, favorites) VALUES(?,?,?,?,?,?,?,?,?)"
+            getConnection().query(queryString, [name,description,calories,servings,newFileName,0,time,user_id, 0], (err, rows) => {
+                if(err){
+                    console.log(err)
+                    res.sendStatus(500)
+                    fs.unlinkSync(newpath)
+                    return
+                }
+                const recipeId = rows.insertId
+                //create labels
+                const labels = JSON.parse(fields.labels)
+                console.log(labels);
+                const promises = []
+                for(var i = 0; i < labels.length; i++){
+                    const label = Label.getKey(labels[i])
+                    promises.push(new Promise((resolve, reject) => {
+                        const queryString = "INSERT INTO label_recipe (recipe_id, label_id) VALUES (?,?)"
+                        getConnection().query(queryString, [recipeId, label], (err) => {
+                            if(err){
+                                reject(err)
+                            }
+                            resolve("ok")
+                        })
+                    }))
+                }
+                Promise.all(promises).then(() => {
+                    res.status(200)
+                    res.json(recipeId)
+                }, (err) => {
+                    console.log(err)
+                    res.sendStatus(500)
+                    fs.unlinkSync(newpath)
+                    getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])
+                })
+            })
         })
     })
 })
