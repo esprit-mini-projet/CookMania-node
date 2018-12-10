@@ -1,9 +1,9 @@
 const Router = require("express")
 const mysql = require("mysql")
 const Label = require("../models/label")
-const formidable = require('formidable')
-const uuidv4 = require('uuid/v4');
-var fs = require('fs');
+const formidable = require("formidable")
+const uuidv4 = require("uuid/v4")
+var fs = require("fs")
 const Unit = require("../models/unit")
 
 const router = Router()
@@ -167,7 +167,7 @@ const getRecipeById = (id, res) => {
             return
         }
         if(rows.length == 0){
-            res.sendStatus(204)
+            res.sendStatus(500)
             return
         }
         let recipe = rows[0]
