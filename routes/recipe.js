@@ -373,7 +373,9 @@ router.post("/add", (req, res) => {
                 }
                 Promise.all(promises).then(() => {
                     res.status(200)
-                    res.json(recipeId)
+                    res.json({
+                        "id": recipeId
+                    })
                 }, (err) => {
                     console.log(err)
                     res.sendStatus(500)
