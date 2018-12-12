@@ -1,9 +1,9 @@
 const Router = require("express")
 const mysql = require("mysql")
 const Label = require("../models/label")
-const formidable = require('formidable')
-const uuidv4 = require('uuid/v4');
-var fs = require('fs');
+const formidable = require("formidable")
+const uuidv4 = require("uuid/v4")
+var fs = require("fs")
 const Unit = require("../models/unit")
 
 const router = Router()
@@ -13,13 +13,34 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    password: "root",
-    port: 8889
+    //port: 8889,
+    //password: "root"
 })
 
 function getConnection(){
     return pool
 }
+
+//add to recipe Favorite count
+router.put("/addFavorites/:recipe_id", (req, res) => {
+    pool.query("UPDATE recipe SET favorites = favorites + 1 WHERE id = ?", [req.params.recipe_id], (err, rows, fields) => {
+        res.sendStatus(200)
+    })
+})
+
+//remove from recipe Favorite count
+router.put("/removeFavorites/:recipe_id", (req, res) => {
+    pool.query("UPDATE recipe SET favorites = favorites - 1 WHERE id = ?", [req.params.recipe_id], (err, rows, fields) => {
+        res.sendStatus(200)
+    })
+})
+
+//add to recipe views count
+router.put("/addViews/:recipe_id", (req, res) => {
+    pool.query("UPDATE recipe SET views = views + 1 WHERE id = ?", [req.params.recipe_id], (err, rows, fields) => {
+        res.sendStatus(200)
+    })
+})
 
 //Get all recipes
 router.get("/", (req, res) => {
@@ -53,6 +74,34 @@ router.get("/user/:id", (req, res) => {
 router.get("/top", (req, res) => {
     const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
     getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+
+//GET all recipies sorted by rating
+router.get("/all/Top", (req, res) => {
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC"
+    getConnection().query(queryString, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+
+//Get all recipes by label
+router.get("/all/:label", (req, res) => {
+    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r left join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC"
+    getConnection().query(queryString, [Label.getKey(req.params.label)], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
@@ -118,7 +167,7 @@ const getRecipeById = (id, res) => {
             return
         }
         if(rows.length == 0){
-            res.sendStatus(204)
+            res.sendStatus(500)
             return
         }
         let recipe = rows[0]
