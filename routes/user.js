@@ -1,6 +1,8 @@
 const express = require('express')
 const mysql = require('mysql')
 const idGenerator = require('../utils/id_generator')
+const notificationUtil = require("../utils/NotificationUtil")
+const notificationType = require("../models/notificationType")
 
 const router = express.Router()
 
@@ -24,8 +26,7 @@ router.post("/signin", (req, res) => {
     pool.query(queryString, [req.body.email, req.body.password], (err, rows, fields) => {
         if(!err){
             if(rows.length != 0){
-                res.status(200)
-                res.json(rows[0])
+                manageDevices(req, res, rows[0])
             }else{
                 res.sendStatus(400)
             }
@@ -189,6 +190,17 @@ router.post("/insert", (req, res) => {
 router.post("/follow/:follower_id/:followed_id", (req, res) => {
     pool.query("INSERT INTO following(follower_id, followed_id) VALUES(?,?)", [req.params.follower_id, req.params.followed_id], (err, rows, fields) => {
         if(!err){
+            pool.query("SELECT * FROM user WHERE id = ?", [req.params.follower_id], (usErr, usRows) => {
+                if(!usErr){
+                    const notifUser = usRows[0]
+                    pool.query("SELECT * FROM devices WHERE user_id = ?", [req.params.followed_id], (devErr, devRows) => {
+                        devRows.forEach(device => {
+                            notificationUtil.notify(notificationType.getKey("follower"), req.params.follower_id, device.token, notifUser.username+" is following you", 
+                                notifUser.username+" just started following you, click here to check his profile!")
+                        });
+                    })
+                }
+            })
             pool.query("UPDATE user SET following = following+1 WHERE id = ?", [req.params.follower_id])
             pool.query("UPDATE user SET followers = followers+1 WHERE id = ?", [req.params.followed_id])
             res.status(204)
@@ -227,6 +239,30 @@ router.get("/check_email/:email", (req, res) => {
     })
 })
 
+function manageDevices(req, res, user){
+    pool.query("SELECT * FROM devices WHERE user_id = ?", [user.id], (devErr, devRows) => {
+        if(!devErr){
+            if(devRows.length != 0 && devRows[0].token != req.body.token){
+                pool.query("UPDATE devices SET token = ?", [req.body.token], (err, rows) => {
+                    res.status(200)
+                    res.json(user)
+                })
+            }else{
+                pool.query("INSERT INTO devices VALUES(?,?,?)", [req.body.uuid, user.id, req.body.token], (err, rows) => {
+                    console.log(req.body.uuid)
+                    console.log(req.body.token)
+                    console.log(devRows.length)
+                    res.status(200)
+                    res.json(user)
+                })
+            }
+        }else{
+            res.sendStatus(500)
+            console.log(devErr)
+        }
+    })
+}
+
 //Check if user exist (if not added him)
 router.post("/social/check", (req, res) => {
     pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
@@ -237,8 +273,7 @@ router.post("/social/check", (req, res) => {
                     if(!err){
                         pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
                             if(!err){
-                                res.status(200)
-                                res.json(rows[0])
+                                manageDevices(req, res, rows[0])
                             }else{
                                 res.status(500)
                                 res.json("Error getting user after insert")
@@ -254,8 +289,7 @@ router.post("/social/check", (req, res) => {
                     if(!err){
                         pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
                             if(!err){
-                                res.status(200)
-                                res.json(rows[0])
+                                manageDevices(req, res, rows[0])
                             }else{
                                 res.status(500)
                                 res.json("Error getting user after insert")
@@ -321,6 +355,12 @@ router.delete("/favorite/delete/:user_id/:recipe_id", (req, res) => {
 router.delete("/favorite/delete/:user_id", (req, res) => {
     pool.query("DELETE FROM favorite WHERE user_id = ?", [req.params.user_id], (err, rows, fields) => {
         res.sendStatus(204)
+    })
+})
+
+router.post("/logout", (req, res) => {
+    pool.query("DELETE FROM devices WHERE uuid = ?", [req.body.uuid], (err, rows) => {
+        res.sendStatus(200)
     })
 })
 

@@ -2,15 +2,10 @@ const Router = require("express")
 const mysql = require("mysql")
 const Label = require("../models/label")
 const Unit = require("../models/unit")
-var admin = require('firebase-admin');
+const notificationUtil = require('../utils/NotificationUtil')
+const notificationTypes = require("../models/notificationType")
 
-var serviceAccount = require('../cookmaniaServiceAccountKey.json');
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-});
-  
-
-const registrationToken = "f3fYT-3EMVs:APA91bFF-C-cUSn567c_3NTBKGatV4h5mKkrZznBSqJOD3OgzzSmRVp_SUsva5hr0JBvQ-CcUaU5YmX8gGaYaso9WHfId6Jr-D-kl_aHmkS-LNAhMMc3YcJIadqR4jQJEHtRx8A9Vtu9"
+const registrationToken = "d2Bq2fk2LWU:APA91bErEslobozqMeg0FWZWKMWvpvoiqkX9rqZvcuqwwP0b6UZfc1RGKDGCia49nDTq3Pa5aXQi3tOZx7V5z9imv84d8RHuBaHAqsO8GdBRcFo8jo_Nuopuo2aSnP_2e73FlrC1SaTb"
 const apiToken = "AAAAS1L0_7o:APA91bGkOGPvtpxXhiUKtEqnvcVyhwqk0BUfvLYwfzDWc7vg9N7oZlVFzjN-g_DKYOqIIwqpNu1vNFfCVRBVoWJnLnItT3LMnYjyAWcotpWgr40dcubrD8yuP8XdjNvt0A1QDGB0oIBo"
 
 const router = Router()
@@ -29,24 +24,8 @@ function getConnection(){
 }
 
 router.get("/notify", (req, res) => {
-    var message = {
-        notification: {
-            title: 'Test',
-            body: 'Hello',
-        },
-        data: {
-            recipe_id: "1"
-        },
-        token: registrationToken
-      };
-    admin.messaging().send(message)
-    .then((response) => {
-            console.log('Successfully sent message:', response);
-        })
-        .catch((error) => {
-            console.log('Error sending message:', error);
-        });
-        res.end()
+    notificationUtil.notify(notificationTypes.getKey("recipe")+"", "1", registrationToken)
+    res.end()
 })
 
 //add to recipe Favorite count
@@ -312,9 +291,28 @@ router.post("/create", (req, res) => {
                 }))
             }
             Promise.all(promises).then(() => {
+                pool.query("SELECT * FROM user WHERE id = ?", [userId], (usErr, usRows) => {
+                    if(!usErr){
+                        notifUser = usRows[0]
+                        console.log(notifUser)
+                        pool.query("SELECT * FROM following WHERE followed_id = ?", [userId], (folErr, folRows) => {
+                            if(!folErr){
+                                folRows.forEach(following => {
+                                    pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
+                                        if(!devErr){
+                                            devRows.forEach(device => {
+                                                notificationUtil.notify(notificationTypes.getKey("recipe")+"", recipeId+"", device.token, notifUser.username +" added a new recipe",
+                                                    notifUser.username+" just added a new recipe! click here to check it!")
+                                            });
+                                        }
+                                    })
+                                });
+                            }
+                        })
+                    }
+                })
                 res.status(202)
                 res.json({id:recipeId})
-                
             }, (err) => {
                 console.log(err)
                 res.sendStatus(500)
