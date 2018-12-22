@@ -5,6 +5,7 @@ const formidable = require("formidable")
 const uuidv4 = require("uuid/v4")
 var fs = require("fs")
 const Unit = require("../models/unit")
+const sizeOf = require("image-size")
 
 const router = Router()
 
@@ -400,6 +401,58 @@ router.delete("/:id", (req, res) => {
     })
 })
 
+//Search
+router.post("/search", (req, res) => {
+    const name = req.body.name
+    const calories = req.body.calories
+    const minServings = req.body.minServings
+    const maxServings = req.body.maxServings
+    const labels = req.body.labels
 
+    let queryString = "SELECT rec.*, IFNULL(AVG(e.rating), 0) rating FROM experience e RIGHT JOIN ("
+    queryString += "SELECT r.* FROM recipe r LEFT JOIN label_recipe l ON r.id = l.recipe_id WHERE"
+    queryString += " r.servings BETWEEN ? AND ?"
+    if(labels.length > 0){
+        queryString += " AND l.label_id in ("
+        labels.forEach(label => {
+            queryString += Label.getKey(label) + ", "
+        });
+        queryString = queryString.substr(0, queryString.length - 2) + ")"
+    }
+    switch (calories) {
+        case "Low":
+            queryString += " AND r.calories BETWEEN 0 AND 700"
+            break;
+        case "Normal":
+            queryString += " AND r.calories BETWEEN 700 AND 1500"
+            break;
+        case "Rich":
+            queryString += " AND r.calories > 1500"
+            break;
+    }
+    if(name.length > 0){
+        queryString += " AND INSTR(r.name, '" + name + "') > 0"
+    }
+    queryString += " GROUP BY r.id"
+    queryString += ") rec ON e.recipe_id = rec.id GROUP BY rec.id"
+    getConnection().query(queryString, [minServings, maxServings], (err, rows) => {
+        if(err){
+            res.sendStatus(500)
+            console.log(err)
+            return
+        }
+        rows = rows.map((row) => {
+            const dimensions = sizeOf("public/images/" + row.image_url)
+            return {
+                "recipe" : row,
+                "height" : dimensions.height,
+                "width" : dimensions.width
+            }
+        })
+        res.status(200)
+        res.json(rows)
+    })
+
+})
 
 module.exports = router
