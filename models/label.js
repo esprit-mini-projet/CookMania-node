@@ -8,7 +8,8 @@ const dict = {
     7: "Dinner",
     8: "Date Night",
     9: "Kids Friendly",
-    10: "Takes Time"
+    10: "Takes Time",
+    11: "Lunch"
 }
 
 const getKey = (label) => {
