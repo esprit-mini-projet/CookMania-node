@@ -51,7 +51,7 @@ router.put("/addViews/:recipe_id", (req, res) => {
 
 //Get all recipes
 router.get("/", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"
     getConnection().query(queryString, (err, rows) => {
         if(err){
             console.log(err)
@@ -65,7 +65,7 @@ router.get("/", (req, res) => {
 
 //Get recipes by user
 router.get("/user/:id", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id"
     getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
@@ -79,7 +79,7 @@ router.get("/user/:id", (req, res) => {
 
 //Get top rated recipes
 router.get("/top", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
     getConnection().query(queryString, (err, rows) => {
         if(err){
             console.log(err)
@@ -93,7 +93,7 @@ router.get("/top", (req, res) => {
 
 //Get recipes by label
 router.get("/label/:label", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r left join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM experience e right join (select r.* from recipe r left join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
     getConnection().query(queryString, [Label.getKey(req.params.label)], (err, rows) => {
         if(err){
             console.log(err)
@@ -116,7 +116,7 @@ router.get("/suggestions", (req, res) => {
         }
         let title = rows[0].title
         let label_id = rows[0].label_id
-        const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r inner join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY (IFNULL(AVG(e.rating), 0) + (r.favorites / r.views) * 5) DESC LIMIT 4"
+        const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM experience e right join (select r.* from recipe r inner join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY (IFNULL(AVG(e.rating), 0) + (r.favorites / r.views) * 5) DESC LIMIT 4"
         getConnection().query(queryString, [label_id], (err, rows) => {
             if(err){
                 console.log(err)
@@ -134,7 +134,7 @@ router.get("/suggestions", (req, res) => {
 
 //Get a single recipe
 router.get("/:id", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"
     getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
@@ -321,6 +321,25 @@ router.post("/create", (req, res) => {
             console.log(err)
             res.sendStatus(500)
         })
+    })
+})
+
+router.post("/similar", (req, res) => {
+    var labels = JSON.parse(req.body.labels)
+    var query = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id JOIN label_recipe l ON r.id = l.recipe_id WHERE r.id != "+req.body.recipe_id+" AND (l.label_id = "+Label.getKey(labels[0])
+    labels.shift()
+    labels.forEach(label => {
+        query += " OR l.label_id = "+Label.getKey(label)
+    })
+    query += ") GROUP BY r.id  LIMIT 10"
+    pool.query(query, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
     })
 })
 

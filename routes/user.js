@@ -154,7 +154,7 @@ router.get("/favorite/recipe/:recipe_id", (req, res) => {
 
 //GET users recipe
 router.get("/recipes/:id", (req, res) => {
-    pool.query("SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM user u JOIN recipe r on u.id = r.user_id LEFT JOIN experience e ON r.id = e.recipe_id WHERE u.id = ? GROUP BY r.id ", [req.params.id], (err, rows, fields) => {
+    pool.query("SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM user u JOIN recipe r on u.id = r.user_id LEFT JOIN experience e ON r.id = e.recipe_id WHERE u.id = ? GROUP BY r.id ", [req.params.id], (err, rows, fields) => {
         if(!err){
             res.status(200)
             res.json(rows)
