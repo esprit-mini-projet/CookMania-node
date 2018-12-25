@@ -3,6 +3,10 @@ const mysql = require('mysql')
 const idGenerator = require('../utils/id_generator')
 const notificationUtil = require("../utils/NotificationUtil")
 const notificationType = require("../models/notificationType")
+const formidable = require('formidable')
+const ip = require('ip')
+const uuidv4 = require('uuid/v4');
+var fs = require('fs');
 
 const router = express.Router()
 
@@ -169,6 +173,35 @@ router.get("/recipes/:id", (req, res) => {
 //Create a new user
 router.post("/insert", (req, res) => {
     const id = idGenerator.ID('au')
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+        if(files.image){
+            var oldpath = files.image.path;
+            var newFileName = uuidv4() + ".png"
+            var newpath = './public/images/profile/' +  newFileName
+            fs.rename(oldpath, newpath, function (err) {
+                if (err) {
+                    console.log(err)
+                    res.sendStatus(500)
+                    return
+                }
+                var imageURL = "http://"+ip.address()+":3000/public/images/profile/"+newFileName
+                pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)", 
+                    [id, fields.username, fields.email, fields.password, imageURL], (err, rows, fields) => {
+                    res.sendStatus(200)
+                })
+            })
+        }else {
+            pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)", 
+                [id, fields.username, fields.email, fields.password, ""], (err, rows, fields) => {
+                res.status(200)
+                res.json("OK")
+            })
+        }
+    });
+
+
+    /*const id = idGenerator.ID('au')
     pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)", [
         id,
         req.body.username,
@@ -183,7 +216,7 @@ router.post("/insert", (req, res) => {
             }
             res.status(200)
             res.json({id: id})
-        })
+        })*/
 })
 
 //Create a new following
@@ -311,16 +344,53 @@ router.post("/social/check", (req, res) => {
 
 //PUT
 //Update User
-router.put("/update/:id", (req, res) => {
-    pool.query("UPDATE user SET username = ?, email = ?, password = ?, image_url = ? WHERE id = ?", [
-        req.body.username,
-        req.body.email,
-        req.body.password,
-        req.body.image_url,
-        req.params.id
-    ], (err, rows, fields) => {
-        res.sendStatus(204)
-    })
+router.post("/update", (req, res) => {
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+        var query = "UPDATE user SET"
+        if(fields.username != ""){
+            query += " username = '"+fields.username+"',"
+        }
+        if(fields.email != ""){
+            query += " email = '"+fields.email+"',"
+        }
+        if(fields.password != ""){
+            query += " password = '"+fields.password+"',"
+        }
+        var imageURL = ""
+        if(files.image){
+            var oldpath = files.image.path;
+            var newFileName = uuidv4() + ".png"
+            var newpath = './public/images/profile/' +  newFileName
+            fs.rename(oldpath, newpath, function (err) {
+                if (err) {
+                    console.log(err)
+                    res.sendStatus(500)
+                    return
+                }
+                pool.query("SELECT * FROM user WHERE id = ?", [fields.id], (e, r) => {
+                    var user = r[0]
+                    if(user.image_url != ""){
+                        fs.unlink("."+user.image_url.slice(-63), function(fse){})
+                    }
+                })
+                imageURL = "http://"+ip.address()+":3000/public/images/profile/"+newFileName
+                if(imageURL != ""){
+                    query += " image_url = '"+imageURL+"'"
+                }
+                query += " WHERE id = ?"
+                pool.query(query, [fields.id], (err, rows, fields) => {
+                    res.sendStatus(200)
+                })
+            })
+        }else {
+            query = (query.slice(-1) == ","?query.substring(0, query.length - 1):query)+" WHERE id = ?"
+            pool.query(query, [fields.id], (err, rows, fields) => {
+                res.status(200)
+                res.json("OK")
+            })
+        }
+    });
 })
 
 //DELETE
