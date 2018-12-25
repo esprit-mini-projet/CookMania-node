@@ -20,7 +20,12 @@ function getConnection(){
 }
 
 router.get("/fetch/:recipeID/:userID", (req, res) => {
-    pool.query("SELECT * FROM experience WHERE recipe_id = ? AND user_id = ?", [req.params.recipeID, req.params.userID], (err, rows, fields) => {
+    pool.query("SELECT * FROM experience WHERE recipe_id = ? AND user_id = ?", [req.params.recipeID, req.params.userID], (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
         res.status(200)
         res.json(rows)
     })
@@ -97,6 +102,18 @@ router.delete("/remove/:user_id/:recipe_id", (req, res) => {
             }
             res.sendStatus(200)
         })
+    })
+})
+
+//Delete Experience
+router.get("/delete/:recipeID/:userID", (req, res) => {
+    pool.query("DELETE FROM experience WHERE recipe_id = ? AND user_id = ?", [req.params.recipeID, req.params.userID], (err) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.sendStatus(200)
     })
 })
 
