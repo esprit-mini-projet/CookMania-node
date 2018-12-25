@@ -355,7 +355,7 @@ router.post("/similar", (req, res) => {
         }
         res.status(200)
         res.json(rows)
-    }
+    })
 })
   
 router.post("/add", (req, res) => {
