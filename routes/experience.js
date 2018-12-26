@@ -81,6 +81,7 @@ router.post("/add", (req, res) => {
             if(er){
                 console.log(er)
                 res.sendStatus(500)
+                fs.unlinkSync(newpath)
                 return
             }
             res.sendStatus(200)
@@ -91,13 +92,22 @@ router.post("/add", (req, res) => {
 
 //Delete Experience
 router.get("/delete/:recipeID/:userID", (req, res) => {
-    pool.query("DELETE FROM experience WHERE recipe_id = ? AND user_id = ?", [req.params.recipeID, req.params.userID], (err) => {
+    pool.query("SELECT image_url FROM experience WHERE recipe_id = ? AND user_id = ?", [req.params.recipeID, req.params.userID], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
             return
         }
-        res.sendStatus(200)
+        const imageUri = rows[0].image_url
+        fs.unlinkSync("./public/images/" + imageUri)
+        pool.query("DELETE FROM experience WHERE recipe_id = ? AND user_id = ?", [req.params.recipeID, req.params.userID], (err) => {
+            if(err){
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+            res.sendStatus(200)
+        })
     })
 })
 
