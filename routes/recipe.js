@@ -28,11 +28,6 @@ function getConnection(){
     return pool
 }
 
-router.get("/getLabel/:label", (req, res) => {
-    console.log("HERE")
-    res.json(Label.getKey("Healthy"))
-})
-
 router.get("/labels", (req, res) => {
     var labels = []
     const dict = Label.dict
