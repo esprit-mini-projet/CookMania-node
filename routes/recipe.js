@@ -20,8 +20,8 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    port: 8889,
-    password: "root"
+    //port: 8889,
+    //password: "root"
 })
 
 function getConnection(){
@@ -346,7 +346,7 @@ router.post("/similar", (req, res) => {
     labels.forEach(label => {
         query += " OR l.label_id = "+Label.getKey(label)
     })
-    query += ") GROUP BY r.id  LIMIT 10"
+    query += ") GROUP BY r.id ORDER BY rating DESC LIMIT 10"
     pool.query(query, (err, rows) => {
         if(err){
             console.log(err)
