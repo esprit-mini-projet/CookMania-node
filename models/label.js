@@ -43,7 +43,13 @@ const getKey = (label) => {
     return Object.keys(flatDict).find(key => flatDict[key] === label)
 }
 
+const getValue = (key) => {
+    var flatDict = flatten(dict)
+    return flatDict[key]
+}
+
 module.exports = {
     dict,
-    getKey
+    getKey,
+    getValue
 }

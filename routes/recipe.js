@@ -213,7 +213,7 @@ const getRecipeById = (id, res) => {
                     return
                 }
                 recipe.labels = labels.map((value) => {
-                    return Label.dict[value.label_id]
+                    return Label.getValue(value.label_id)
                 })
                 //get steps
                 const queryString = "SELECT * FROM step WHERE recipe_id = ?"
