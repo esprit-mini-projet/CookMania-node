@@ -11,8 +11,8 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    //port: 8889,
-    //password: "root"
+    port: 8889,
+    password: "root"
 })
 
 function getConnection(){
@@ -87,7 +87,23 @@ router.post("/add", (req, res) => {
             res.sendStatus(200)
         })
       })
- });
+    });
+})
+
+router.delete("/remove/:user_id/:recipe_id", (req, res) => {
+    pool.query("SELECT * FROM experience WHERE user_id = ? AND recipe_id = ?", [req.params.user_id, req.params.recipe_id], (err, rows) => {
+        pool.query("DELETE FROM experience WHERE user_id = ? AND recipe_id = ?", [req.params.user_id, req.params.recipe_id], (e, r) => {
+            if(e){
+                console.log(e)
+                res.sendStatus(500)
+                return
+            }
+            if(rows[0].image_url != ""){
+                fs.unlink("./public/images/"+rows[0].image_url, function(fse){})
+            }
+            res.sendStatus(200)
+        })
+    })
 })
 
 //Delete Experience

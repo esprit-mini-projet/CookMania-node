@@ -5,6 +5,13 @@ const formidable = require("formidable")
 const uuidv4 = require("uuid/v4")
 var fs = require("fs")
 const Unit = require("../models/unit")
+const sizeOf = require("image-size")
+
+const notificationUtil = require('../utils/NotificationUtil')
+const notificationTypes = require("../models/notificationType")
+
+const registrationToken = "d2Bq2fk2LWU:APA91bErEslobozqMeg0FWZWKMWvpvoiqkX9rqZvcuqwwP0b6UZfc1RGKDGCia49nDTq3Pa5aXQi3tOZx7V5z9imv84d8RHuBaHAqsO8GdBRcFo8jo_Nuopuo2aSnP_2e73FlrC1SaTb"
+const apiToken = "AAAAS1L0_7o:APA91bGkOGPvtpxXhiUKtEqnvcVyhwqk0BUfvLYwfzDWc7vg9N7oZlVFzjN-g_DKYOqIIwqpNu1vNFfCVRBVoWJnLnItT3LMnYjyAWcotpWgr40dcubrD8yuP8XdjNvt0A1QDGB0oIBo"
 
 const router = Router()
 
@@ -13,13 +20,18 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    //port: 8889,
-    //password: "root"
+    port: 8889,
+    password: "root"
 })
 
 function getConnection(){
     return pool
 }
+
+router.get("/notify", (req, res) => {
+    notificationUtil.notify(notificationTypes.getKey("recipe")+"", "1", registrationToken)
+    res.end()
+})
 
 //add to recipe Favorite count
 router.put("/addFavorites/:recipe_id", (req, res) => {
@@ -44,7 +56,7 @@ router.put("/addViews/:recipe_id", (req, res) => {
 
 //Get all recipes
 router.get("/", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id"
     getConnection().query(queryString, (err, rows) => {
         if(err){
             console.log(err)
@@ -58,7 +70,7 @@ router.get("/", (req, res) => {
 
 //Get recipes by user
 router.get("/user/:id", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id"
     getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
@@ -72,7 +84,7 @@ router.get("/user/:id", (req, res) => {
 
 //Get top rated recipes
 router.get("/top", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
     getConnection().query(queryString, (err, rows) => {
         if(err){
             console.log(err)
@@ -114,7 +126,7 @@ router.get("/all/:label", (req, res) => {
 
 //Get recipes by label
 router.get("/label/:label", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r left join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM experience e right join (select r.* from recipe r left join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY AVG(e.rating) DESC LIMIT 10"
     getConnection().query(queryString, [Label.getKey(req.params.label)], (err, rows) => {
         if(err){
             console.log(err)
@@ -137,7 +149,7 @@ router.get("/suggestions", (req, res) => {
         }
         let title = rows[0].title
         let label_id = rows[0].label_id
-        const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM experience e right join (select r.* from recipe r inner join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY (IFNULL(AVG(e.rating), 0) + (r.favorites / r.views) * 5) DESC LIMIT 4"
+        const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM experience e right join (select r.* from recipe r inner join label_recipe l on l.recipe_id = r.id where l.label_id = ?) r ON r.id = e.recipe_id GROUP BY r.id ORDER BY (IFNULL(AVG(e.rating), 0) + (r.favorites / r.views) * 5) DESC LIMIT 4"
         getConnection().query(queryString, [label_id], (err, rows) => {
             if(err){
                 console.log(err)
@@ -159,7 +171,7 @@ router.get("/:id", (req, res) => {
 })
 
 const getRecipeById = (id, res) => {
-    const queryString = "SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.id = ? GROUP BY r.id"
     getConnection().query(queryString, [id], (err, rows) => {
         if(err){
             console.log(err)
@@ -327,6 +339,25 @@ router.post("/create", (req, res) => {
     })
 })
 
+router.post("/similar", (req, res) => {
+    var labels = JSON.parse(req.body.labels)
+    var query = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id JOIN label_recipe l ON r.id = l.recipe_id WHERE r.id != "+req.body.recipe_id+" AND (l.label_id = "+Label.getKey(labels[0])
+    labels.shift()
+    labels.forEach(label => {
+        query += " OR l.label_id = "+Label.getKey(label)
+    })
+    query += ") GROUP BY r.id  LIMIT 10"
+    pool.query(query, (err, rows) => {
+        if(err){
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.json(rows)
+    })
+})
+  
 router.post("/add", (req, res) => {
     var form = new formidable.IncomingForm();
     form.parse(req, function (err, fields, files) {
@@ -372,8 +403,30 @@ router.post("/add", (req, res) => {
                     }))
                 }
                 Promise.all(promises).then(() => {
+                      pool.query("SELECT * FROM user WHERE id = ?", [userId], (usErr, usRows) => {
+                        if(!usErr){
+                            notifUser = usRows[0]
+                            console.log(notifUser)
+                            pool.query("SELECT * FROM following WHERE followed_id = ?", [userId], (folErr, folRows) => {
+                                if(!folErr){
+                                    folRows.forEach(following => {
+                                        pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
+                                            if(!devErr){
+                                                devRows.forEach(device => {
+                                                    notificationUtil.notify(notificationTypes.getKey("recipe")+"", recipeId+"", device.token, notifUser.username +" added a new recipe",
+                                                        notifUser.username+" just added a new recipe! click here to check it!")
+                                                });
+                                            }
+                                        })
+                                    });
+                                }
+                            })
+                        }
+                    })
                     res.status(200)
-                    res.json(recipeId)
+                    res.json({
+                        "id": recipeId
+                    })
                 }, (err) => {
                     console.log(err)
                     res.sendStatus(500)
@@ -396,6 +449,60 @@ router.delete("/:id", (req, res) => {
         }
         res.sendStatus(204)
     })
+})
+
+//Search
+router.post("/search", (req, res) => {
+    const name = req.body.name
+    const calories = req.body.calories
+    const minServings = req.body.minServings
+    const maxServings = req.body.maxServings
+    const labels = req.body.labels
+
+    let queryString = "SELECT rec.*, IFNULL(AVG(e.rating), 0) rating FROM experience e RIGHT JOIN ("
+    queryString += "SELECT r.* FROM recipe r LEFT JOIN label_recipe l ON r.id = l.recipe_id WHERE"
+    queryString += " r.servings BETWEEN ? AND ?"
+    if(labels.length > 0){
+        queryString += " AND l.label_id in ("
+        labels.forEach(label => {
+            queryString += Label.getKey(label) + ", "
+        });
+        queryString = queryString.substr(0, queryString.length - 2) + ")"
+    }
+    switch (calories) {
+        case "Low":
+            queryString += " AND r.calories BETWEEN 0 AND 700"
+            break;
+        case "Normal":
+            queryString += " AND r.calories BETWEEN 700 AND 1500"
+            break;
+        case "Rich":
+            queryString += " AND r.calories > 1500"
+            break;
+    }
+    if(name.length > 0){
+        queryString += " AND INSTR(r.name, '" + name + "') > 0"
+    }
+    queryString += " GROUP BY r.id"
+    queryString += ") rec ON e.recipe_id = rec.id GROUP BY rec.id"
+    getConnection().query(queryString, [minServings, maxServings], (err, rows) => {
+        if(err){
+            res.sendStatus(500)
+            console.log(err)
+            return
+        }
+        rows = rows.map((row) => {
+            const dimensions = sizeOf("public/images/" + row.image_url)
+            return {
+                "recipe" : row,
+                "height" : dimensions.height,
+                "width" : dimensions.width
+            }
+        })
+        res.status(200)
+        res.json(rows)
+    })
+
 })
 
 module.exports = router

@@ -1,6 +1,12 @@
 const express = require('express')
 const mysql = require('mysql')
 const idGenerator = require('../utils/id_generator')
+const notificationUtil = require("../utils/NotificationUtil")
+const notificationType = require("../models/notificationType")
+const formidable = require('formidable')
+const ip = require('ip')
+const uuidv4 = require('uuid/v4');
+var fs = require('fs');
 
 const router = express.Router()
 
@@ -9,8 +15,8 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    //port: 8889,
-    //password: "root"
+    port: 8889,
+    password: "root"
 })
 
 function getConnection(){
@@ -24,8 +30,7 @@ router.post("/signin", (req, res) => {
     pool.query(queryString, [req.body.email, req.body.password], (err, rows, fields) => {
         if(!err){
             if(rows.length != 0){
-                res.status(200)
-                res.json(rows[0])
+                manageDevices(req, res, rows[0])
             }else{
                 res.sendStatus(400)
             }
@@ -153,7 +158,7 @@ router.get("/favorite/recipe/:recipe_id", (req, res) => {
 
 //GET users recipe
 router.get("/recipes/:id", (req, res) => {
-    pool.query("SELECT r.*, IFNULL(AVG(e.rating), 0) rating FROM user u JOIN recipe r on u.id = r.user_id LEFT JOIN experience e ON r.id = e.recipe_id WHERE u.id = ? GROUP BY r.id ", [req.params.id], (err, rows, fields) => {
+    pool.query("SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM user u JOIN recipe r on u.id = r.user_id LEFT JOIN experience e ON r.id = e.recipe_id WHERE u.id = ? GROUP BY r.id ", [req.params.id], (err, rows, fields) => {
         if(!err){
             res.status(200)
             res.json(rows)
@@ -168,6 +173,35 @@ router.get("/recipes/:id", (req, res) => {
 //Create a new user
 router.post("/insert", (req, res) => {
     const id = idGenerator.ID('au')
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+        if(files.image){
+            var oldpath = files.image.path;
+            var newFileName = uuidv4() + ".png"
+            var newpath = './public/images/profile/' +  newFileName
+            fs.rename(oldpath, newpath, function (err) {
+                if (err) {
+                    console.log(err)
+                    res.sendStatus(500)
+                    return
+                }
+                var imageURL = "http://"+ip.address()+":3000/public/images/profile/"+newFileName
+                pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)", 
+                    [id, fields.username, fields.email, fields.password, imageURL], (err, rows, fields) => {
+                    res.sendStatus(200)
+                })
+            })
+        }else {
+            pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)", 
+                [id, fields.username, fields.email, fields.password, ""], (err, rows, fields) => {
+                res.status(200)
+                res.json("OK")
+            })
+        }
+    });
+
+
+    /*const id = idGenerator.ID('au')
     pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)", [
         id,
         req.body.username,
@@ -182,13 +216,24 @@ router.post("/insert", (req, res) => {
             }
             res.status(200)
             res.json({id: id})
-        })
+        })*/
 })
 
 //Create a new following
 router.post("/follow/:follower_id/:followed_id", (req, res) => {
     pool.query("INSERT INTO following(follower_id, followed_id) VALUES(?,?)", [req.params.follower_id, req.params.followed_id], (err, rows, fields) => {
         if(!err){
+            pool.query("SELECT * FROM user WHERE id = ?", [req.params.follower_id], (usErr, usRows) => {
+                if(!usErr){
+                    const notifUser = usRows[0]
+                    pool.query("SELECT * FROM devices WHERE user_id = ?", [req.params.followed_id], (devErr, devRows) => {
+                        devRows.forEach(device => {
+                            notificationUtil.notify(notificationType.getKey("follower"), req.params.follower_id, device.token, notifUser.username+" is following you", 
+                                notifUser.username+" just started following you, click here to check his profile!")
+                        });
+                    })
+                }
+            })
             pool.query("UPDATE user SET following = following+1 WHERE id = ?", [req.params.follower_id])
             pool.query("UPDATE user SET followers = followers+1 WHERE id = ?", [req.params.followed_id])
             res.status(204)
@@ -227,6 +272,30 @@ router.get("/check_email/:email", (req, res) => {
     })
 })
 
+function manageDevices(req, res, user){
+    pool.query("SELECT * FROM devices WHERE user_id = ?", [user.id], (devErr, devRows) => {
+        if(!devErr){
+            if(devRows.length != 0 && devRows[0].token != req.body.token){
+                pool.query("UPDATE devices SET token = ?", [req.body.token], (err, rows) => {
+                    res.status(200)
+                    res.json(user)
+                })
+            }else{
+                pool.query("INSERT INTO devices VALUES(?,?,?)", [req.body.uuid, user.id, req.body.token], (err, rows) => {
+                    console.log(req.body.uuid)
+                    console.log(req.body.token)
+                    console.log(devRows.length)
+                    res.status(200)
+                    res.json(user)
+                })
+            }
+        }else{
+            res.sendStatus(500)
+            console.log(devErr)
+        }
+    })
+}
+
 //Check if user exist (if not added him)
 router.post("/social/check", (req, res) => {
     pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
@@ -237,8 +306,7 @@ router.post("/social/check", (req, res) => {
                     if(!err){
                         pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
                             if(!err){
-                                res.status(200)
-                                res.json(rows[0])
+                                manageDevices(req, res, rows[0])
                             }else{
                                 res.status(500)
                                 res.json("Error getting user after insert")
@@ -254,8 +322,7 @@ router.post("/social/check", (req, res) => {
                     if(!err){
                         pool.query("SELECT * FROM user WHERE id = ?", [req.body.id], (err, rows, fields) => {
                             if(!err){
-                                res.status(200)
-                                res.json(rows[0])
+                                manageDevices(req, res, rows[0])
                             }else{
                                 res.status(500)
                                 res.json("Error getting user after insert")
@@ -277,16 +344,53 @@ router.post("/social/check", (req, res) => {
 
 //PUT
 //Update User
-router.put("/update/:id", (req, res) => {
-    pool.query("UPDATE user SET username = ?, email = ?, password = ?, image_url = ? WHERE id = ?", [
-        req.body.username,
-        req.body.email,
-        req.body.password,
-        req.body.image_url,
-        req.params.id
-    ], (err, rows, fields) => {
-        res.sendStatus(204)
-    })
+router.post("/update", (req, res) => {
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+        var query = "UPDATE user SET"
+        if(fields.username != ""){
+            query += " username = '"+fields.username+"',"
+        }
+        if(fields.email != ""){
+            query += " email = '"+fields.email+"',"
+        }
+        if(fields.password != ""){
+            query += " password = '"+fields.password+"',"
+        }
+        var imageURL = ""
+        if(files.image){
+            var oldpath = files.image.path;
+            var newFileName = uuidv4() + ".png"
+            var newpath = './public/images/profile/' +  newFileName
+            fs.rename(oldpath, newpath, function (err) {
+                if (err) {
+                    console.log(err)
+                    res.sendStatus(500)
+                    return
+                }
+                pool.query("SELECT * FROM user WHERE id = ?", [fields.id], (e, r) => {
+                    var user = r[0]
+                    if(user.image_url != ""){
+                        fs.unlink("."+user.image_url.slice(-63), function(fse){})
+                    }
+                })
+                imageURL = "http://"+ip.address()+":3000/public/images/profile/"+newFileName
+                if(imageURL != ""){
+                    query += " image_url = '"+imageURL+"'"
+                }
+                query += " WHERE id = ?"
+                pool.query(query, [fields.id], (err, rows, fields) => {
+                    res.sendStatus(200)
+                })
+            })
+        }else {
+            query = (query.slice(-1) == ","?query.substring(0, query.length - 1):query)+" WHERE id = ?"
+            pool.query(query, [fields.id], (err, rows, fields) => {
+                res.status(200)
+                res.json("OK")
+            })
+        }
+    });
 })
 
 //DELETE
@@ -321,6 +425,12 @@ router.delete("/favorite/delete/:user_id/:recipe_id", (req, res) => {
 router.delete("/favorite/delete/:user_id", (req, res) => {
     pool.query("DELETE FROM favorite WHERE user_id = ?", [req.params.user_id], (err, rows, fields) => {
         res.sendStatus(204)
+    })
+})
+
+router.post("/logout", (req, res) => {
+    pool.query("DELETE FROM devices WHERE uuid = ?", [req.body.uuid], (err, rows) => {
+        res.sendStatus(200)
     })
 })
 

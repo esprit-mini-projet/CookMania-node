@@ -3,6 +3,7 @@ const mysql = require("mysql")
 const formidable = require('formidable')
 const uuidv4 = require('uuid/v4');
 var fs = require('fs');
+const Unit = require("../models/unit")
 
 const router = Router()
 
@@ -11,8 +12,8 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    //port: 8889,
-    //password: "root"
+    port: 8889,
+    password: "root"
 })
 
 function getConnection(){
@@ -66,21 +67,30 @@ const addStep = (fileName, fields, res) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
-            getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])
             if(fileName != ""){
                 fs.unlinkSync("./public/images/" + fileName)
             }
+            getConnection().query("SELECT image_url FROM recipe WHERE id = ?", [recipeId], (err, rows) => {
+                if(err){
+                    console.log(err)
+                    return
+                }
+                fs.unlinkSync("./public/images/" + rows[0].image_url)
+                getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])
+            })
             return
         }
         const stepId = rows.insertId
         //create ingedients
         const promises = []
-        const ingredients = req.body.ingredients
+        const ingredients = JSON.parse(fields.ingredients)
         for(var i = 0; i < ingredients.length; i++){
             const ingredient = ingredients[i]
             promises.push(new Promise((resolve, reject) => {
                 const queryString = "INSERT INTO ingredient (step_id, name, quantity, unit) VALUES (?,?,?,?)"
-                getConnection().query(queryString, [stepId, ingredient.name, ingredient.quantity, ingredient.unit], (err) => {
+                console.log("unit: " + ingredient.unit)
+                const unit = Unit.getKey(ingredient.unit)
+                getConnection().query(queryString, [stepId, ingredient.name, ingredient.quantity, unit], (err) => {
                     if(err){
                         reject(err)
                     }
@@ -93,10 +103,17 @@ const addStep = (fileName, fields, res) => {
         }, (err) => {
             console.log(err)
             res.sendStatus(500)
-            getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])
             if(fileName != ""){
                 fs.unlinkSync("./public/images/" + fileName)
             }
+            getConnection().query("SELECT image_url FROM recipe WHERE id = ?", [recipeId], (err, rows) => {
+                if(err){
+                    console.log(err)
+                    return
+                }
+                fs.unlinkSync("./public/images/" + rows[0].image_url)
+                getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])
+            })
         })
     })
 }
