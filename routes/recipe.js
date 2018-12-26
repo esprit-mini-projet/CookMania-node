@@ -28,6 +28,19 @@ function getConnection(){
     return pool
 }
 
+router.get("/labels", (req, res) => {
+    var labels = []
+    const dict = Label.dict
+    Object.keys(dict).forEach(cat => {
+        var catLabels = []
+        Object.keys(dict[cat]).forEach(label => {
+            catLabels.push(dict[cat][label])
+        })
+        labels.push({category: cat, labels: catLabels})
+    });
+    res.json(labels)
+})
+
 router.get("/notify", (req, res) => {
     notificationUtil.notify(notificationTypes.getKey("recipe")+"", "1", registrationToken)
     res.end()
@@ -200,7 +213,7 @@ const getRecipeById = (id, res) => {
                     return
                 }
                 recipe.labels = labels.map((value) => {
-                    return Label.dict[value.label_id]
+                    return Label.getValue(value.label_id)
                 })
                 //get steps
                 const queryString = "SELECT * FROM step WHERE recipe_id = ?"
