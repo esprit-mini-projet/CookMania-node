@@ -20,13 +20,26 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    port: 8889,
-    password: "root"
+    //port: 8889,
+    //password: "root"
 })
 
 function getConnection(){
     return pool
 }
+
+router.get("/labels", (req, res) => {
+    var labels = []
+    const dict = Label.dict
+    Object.keys(dict).forEach(cat => {
+        var catLabels = []
+        Object.keys(dict[cat]).forEach(label => {
+            catLabels.push(dict[cat][label])
+        })
+        labels.push({category: cat, labels: catLabels})
+    });
+    res.json(labels)
+})
 
 router.get("/notify", (req, res) => {
     notificationUtil.notify(notificationTypes.getKey("recipe")+"", "1", registrationToken)
