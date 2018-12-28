@@ -42,7 +42,7 @@ router.get("/labels", (req, res) => {
 })
 
 router.get("/notify/:registration_token", (req, res) => {
-    notificationUtil.notify(notificationTypes.getKey("experience")+"", "1", "au_1541965560996N3V6L", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
+    notificationUtil.notifyAndroid(notificationTypes.getKey("experience")+"", "1", "au_1541965560996N3V6L", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
     res.end()
 })
 
@@ -426,8 +426,13 @@ router.post("/add", (req, res) => {
                                         pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
                                             if(!devErr){
                                                 devRows.forEach(device => {
-                                                    notificationUtil.notify(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
-                                                        notifUser.username+" just added a new recipe! click here to check it!")
+                                                    if(device.device_type == "ios"){
+                                                        notificationUtil.notifyIos(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
+                                                            notifUser.username+" just added a new recipe! click here to check it!")
+                                                    }else{
+                                                        notificationUtil.notifyAndroid(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
+                                                            notifUser.username+" just added a new recipe! click here to check it!")
+                                                    }
                                                 });
                                             }
                                         })
