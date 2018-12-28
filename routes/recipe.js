@@ -41,8 +41,8 @@ router.get("/labels", (req, res) => {
     res.json(labels)
 })
 
-router.get("/notify", (req, res) => {
-    notificationUtil.notify(notificationTypes.getKey("recipe")+"", "1", registrationToken)
+router.get("/notify/:registration_token", (req, res) => {
+    notificationUtil.notify(notificationTypes.getKey("experience")+"", "1", "au_1541965560996N3V6L", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
     res.end()
 })
 
@@ -426,7 +426,7 @@ router.post("/add", (req, res) => {
                                         pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
                                             if(!devErr){
                                                 devRows.forEach(device => {
-                                                    notificationUtil.notify(notificationTypes.getKey("recipe")+"", recipeId+"", device.token, notifUser.username +" added a new recipe",
+                                                    notificationUtil.notify(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
                                                         notifUser.username+" just added a new recipe! click here to check it!")
                                                 });
                                             }

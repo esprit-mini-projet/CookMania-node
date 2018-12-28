@@ -1,6 +1,7 @@
 const dict = {
     1: "recipe",
-    2: "follower"
+    2: "follower",
+    3: "experience"
 }
 
 const getKey = (notificationType) => {

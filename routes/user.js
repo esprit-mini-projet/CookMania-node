@@ -228,7 +228,7 @@ router.post("/follow/:follower_id/:followed_id", (req, res) => {
                     const notifUser = usRows[0]
                     pool.query("SELECT * FROM devices WHERE user_id = ?", [req.params.followed_id], (devErr, devRows) => {
                         devRows.forEach(device => {
-                            notificationUtil.notify(notificationType.getKey("follower"), req.params.follower_id, device.token, notifUser.username+" is following you", 
+                            notificationUtil.notify(notificationType.getKey("follower"), req.params.follower_id, "", device.token, notifUser.username+" is following you", 
                                 notifUser.username+" just started following you, click here to check his profile!")
                         });
                     })

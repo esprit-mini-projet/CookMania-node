@@ -6,7 +6,7 @@ admin.initializeApp({
 });
 
 module.exports = {
-    notify: function(notificationType, notificationId, deviceToken, title, message){
+    notify: function(notificationType, notificationId, notificationUserId, deviceToken, title, message){
         var message = {
             notification: {
                 title: title,
@@ -14,7 +14,8 @@ module.exports = {
             },
             data: {
                 notif_id: notificationId,
-                notif_type: notificationType
+                notif_type: notificationType,
+                notif_user_id: notificationUserId
             },
             token: deviceToken
         };
