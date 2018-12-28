@@ -518,4 +518,34 @@ router.post("/search", (req, res) => {
 
 })
 
+router.get("/feed/:user_id", (req, res) => {
+    pool.query("SELECT r.* FROM recipe r JOIN following f ON r.user_id = f.followed_id WHERE f.follower_id = ?",
+    [req.params.user_id], (err, rows) => {
+        var respRows = []
+        const promises = []
+        rows.forEach(row => {
+            promises.push(promises.push(new Promise((resolve, reject) => {
+                pool.query("SELECT * FROM user WHERE id = ?", [row.user_id], (uerr, urow) => {
+                    if(uerr){
+                        reject(uerr)
+                        return
+                    }
+                    respRows.push({
+                        recipe: row,
+                        user: urow[0]
+                    })
+                    resolve("ok")
+                })
+            })))
+        })
+        Promise.all(promises).then(() => {
+            respRows.sort(function (a, b) {
+                return (b.recipe.date < a.recipe.date) ? -1 : 1;
+            });
+            res.status(200)
+            res.json(respRows)
+        })
+    })
+})
+
 module.exports = router
