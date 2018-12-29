@@ -455,7 +455,7 @@ router.post("/update_photo", (req, res) => {
         const userId = fields.user_id
         var oldpath = files.image.path
         var newFileName = uuidv4() + ".png"
-        var newpath = './public/images/' + newFileName
+        var newpath = './public/images/profile/' + newFileName
         fs.rename(oldpath, newpath, function (err) {
             if (err) {
                 console.log(err)
@@ -470,7 +470,8 @@ router.post("/update_photo", (req, res) => {
                     oldImageUrl = oldImageUrl.replace(/http.*3000/, ".")
                 }
                 if(oldImageUrl != null) fs.unlinkSync(oldImageUrl)
-                pool.query("UPDATE user SET image_url = ? WHERE id = ?", [newFileName, userId], (err) => {
+                const imageURL = "http://" + ip.address() + ":3000/public/images/profile/" + newFileName
+                pool.query("UPDATE user SET image_url = ? WHERE id = ?", [imageURL, userId], (err) => {
                     if (err) {
                         console.log(er)
                         res.status(500)
@@ -478,7 +479,6 @@ router.post("/update_photo", (req, res) => {
                         fs.unlinkSync(newpath)
                         return
                     }
-                    const imageURL = "http://" + ip.address() + ":3000/public/images/profile/" + newFileName
                     res.status(200)
                     res.send(imageURL)
                 })
