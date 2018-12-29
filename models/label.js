@@ -6,7 +6,8 @@ const dict = {
     Type: {
         6: "Breakfast",
         7: "Dinner",
-        11: "Lunch"
+        11: "Lunch",
+        5: "Desert"
     },
     Occasion: {
         8: "Date Night",
