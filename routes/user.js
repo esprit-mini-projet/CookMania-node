@@ -7,6 +7,7 @@ const formidable = require('formidable')
 const ip = require('ip')
 const uuidv4 = require('uuid/v4');
 var fs = require('fs');
+const os = require( 'os' )
 
 const router = express.Router()
 
@@ -470,10 +471,11 @@ router.post("/update_photo", (req, res) => {
                     oldImageUrl = oldImageUrl.replace(/http.*3000/, ".")
                 }
                 if(oldImageUrl != null) fs.unlinkSync(oldImageUrl)
-                const imageURL = "http://" + ip.address() + ":3000/public/images/profile/" + newFileName
+                const ipAddress = os.networkInterfaces()["Wi-Fi"][1].address
+                const imageURL = "http://" + ipAddress + ":3000/public/images/profile/" + newFileName
                 pool.query("UPDATE user SET image_url = ? WHERE id = ?", [imageURL, userId], (err) => {
                     if (err) {
-                        console.log(er)
+                        console.log(err)
                         res.status(500)
                         res.send("")
                         fs.unlinkSync(newpath)
