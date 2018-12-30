@@ -460,8 +460,7 @@ router.post("/update_photo", (req, res) => {
         fs.rename(oldpath, newpath, function (err) {
             if (err) {
                 console.log(err)
-                res.status(500)
-                res.send("")
+                res.sendStatus(500)
                 return
             }
             pool.query("SELECT image_url FROM user WHERE id = ?", [userId], (err, rows) => {
@@ -476,8 +475,7 @@ router.post("/update_photo", (req, res) => {
                 pool.query("UPDATE user SET image_url = ? WHERE id = ?", [imageURL, userId], (err) => {
                     if (err) {
                         console.log(err)
-                        res.status(500)
-                        res.send("")
+                        res.sendStatus(500)
                         fs.unlinkSync(newpath)
                         return
                     }
@@ -486,6 +484,45 @@ router.post("/update_photo", (req, res) => {
                 })
             })
         })
+    })
+})
+
+//GET user following list
+router.get("/following_list/:id", (req, res) => {
+    pool.query("SELECT u.*, f.date follow_date FROM following f JOIN user u ON f.followed_id = u.id WHERE f.follower_id = ? ORDER BY f.date DESC", [req.params.id], (err, rows) => {
+        if (err) {
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.send(rows)
+    })
+})
+
+//GET user followers list
+router.get("/follower_list/:id", (req, res) => {
+    pool.query("SELECT u.*, f.date follow_date FROM following f JOIN user u ON f.follower_id = u.id WHERE f.followed_id = ? ORDER BY f.date DESC", [req.params.id], (err, rows) => {
+        if (err) {
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.send(rows)
+    })
+})
+
+//Check whether user is following other user
+router.get("/is_following/:id1/:id2", (req, res) => {
+    pool.query("SELECT f.* FROM following f JOIN user u ON f.follower_id = u.id WHERE f.follower_id = ? AND f.followed_id = ?", [req.params.id1, req.params.id2], (err, rows) => {
+        if (err) {
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.status(200)
+        res.send(rows.length > 0 ? true : false)
     })
 })
 

@@ -83,7 +83,7 @@ router.get("/", (req, res) => {
 
 //Get recipes by user
 router.get("/user/:id", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id ORDER BY r.date DESC"
     getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
