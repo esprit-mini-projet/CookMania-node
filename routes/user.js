@@ -450,6 +450,7 @@ router.get("/cover/:id", (req, res) => {
     })
 })
 
+//Update profile photo
 router.post("/update_photo", (req, res) => {
     var form = new formidable.IncomingForm();
     form.parse(req, function (err, fields, files) {
@@ -469,7 +470,7 @@ router.post("/update_photo", (req, res) => {
                     oldImageUrl = rows[0].image_url
                     oldImageUrl = oldImageUrl.replace(/http.*3000/, ".")
                 }
-                if(oldImageUrl != null) fs.unlinkSync(oldImageUrl)
+                if(oldImageUrl != null && fs.existsSync(oldImageUrl)) fs.unlinkSync(oldImageUrl)
                 const ipAddress = os.networkInterfaces()["Wi-Fi"][1].address
                 const imageURL = "http://" + ipAddress + ":3000/public/images/profile/" + newFileName
                 pool.query("UPDATE user SET image_url = ? WHERE id = ?", [imageURL, userId], (err) => {
