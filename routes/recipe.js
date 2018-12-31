@@ -470,20 +470,33 @@ router.delete("/:id", (req, res) => {
                 return
             }
             imageUrls = imageUrls.concat(
-                rows.filter((row) => row.image_url.length > 0).map((row) => "./public/images/" + row.image_url))
-            imageUrls.forEach(url => {
-                if(fs.existsSync(url)){
-                    fs.unlinkSync(url)
-                }  
-            })
-            const queryString = "DELETE FROM recipe WHERE id = ?"
-            getConnection().query(queryString, [req.params.id], (err) => {
+                rows.filter((row) => row.image_url.length > 0)
+                .map((row) => "./public/images/" + row.image_url))
+            const queryString = "SELECT image_url FROM experience WHERE recipe_id = ?"
+            getConnection().query(queryString, [req.params.id], (err, rows) => {
                 if(err){
                     console.log(err)
                     res.sendStatus(500)
                     return
                 }
-                res.sendStatus(204)
+                imageUrls = imageUrls.concat(
+                    rows.filter((row) => row.image_url.length > 0)
+                    .map((row) => "./public/images/" + row.image_url))
+                console.log(imageUrls)
+                imageUrls.forEach(url => {
+                    if(fs.existsSync(url)){
+                        fs.unlinkSync(url)
+                    }  
+                })
+                const queryString = "DELETE FROM recipe WHERE id = ?"
+                getConnection().query(queryString, [req.params.id], (err) => {
+                    if(err){
+                        console.log(err)
+                        res.sendStatus(500)
+                        return
+                    }
+                    res.sendStatus(204)
+                })
             })
         })
     })
