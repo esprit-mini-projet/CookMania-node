@@ -453,14 +453,39 @@ router.post("/add", (req, res) => {
 
 //Delete recipe
 router.delete("/:id", (req, res) => {
-    const queryString = "DELETE FROM recipe WHERE id = ?"
-    getConnection().query(queryString, [req.params.id], (err) => {
+    const queryString = "SELECT image_url FROM recipe WHERE id = ?"
+    getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
             return
         }
-        res.sendStatus(204)
+        var imageUrls = []
+        if(rows.length > 0) imageUrls.push("./public/images/" + rows[0].image_url)
+        const queryString = "SELECT image_url FROM step WHERE recipe_id = ?"
+        getConnection().query(queryString, [req.params.id], (err, rows) => {
+            if(err){
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+            imageUrls = imageUrls.concat(
+                rows.filter((row) => row.image_url.length > 0).map((row) => "./public/images/" + row.image_url))
+            imageUrls.forEach(url => {
+                if(fs.existsSync(url)){
+                    fs.unlinkSync(url)
+                }  
+            })
+            const queryString = "DELETE FROM recipe WHERE id = ?"
+            getConnection().query(queryString, [req.params.id], (err) => {
+                if(err){
+                    console.log(err)
+                    res.sendStatus(500)
+                    return
+                }
+                res.sendStatus(204)
+            })
+        })
     })
 })
 
