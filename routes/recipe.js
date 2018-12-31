@@ -416,11 +416,11 @@ router.post("/add", (req, res) => {
                     }))
                 }
                 Promise.all(promises).then(() => {
-                      pool.query("SELECT * FROM user WHERE id = ?", [userId], (usErr, usRows) => {
+                      pool.query("SELECT * FROM user WHERE id = ?", [user_id], (usErr, usRows) => {
                         if(!usErr){
                             notifUser = usRows[0]
                             console.log(notifUser)
-                            pool.query("SELECT * FROM following WHERE followed_id = ?", [userId], (folErr, folRows) => {
+                            pool.query("SELECT * FROM following WHERE followed_id = ?", [user_id], (folErr, folRows) => {
                                 if(!folErr){
                                     folRows.forEach(following => {
                                         pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
