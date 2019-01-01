@@ -397,10 +397,35 @@ router.post("/update", (req, res) => {
 //DELETE
 //delete a user by id
 router.delete("/delete/:id", (req, res) => {
-    pool.query("DELETE FROM user WHERE id = ?", [
-        req.params.id
-    ], (err, rows, fields) => {
-        res.sendStatus(204)
+    const queryString = "SELECT r.image_url as recipe_image, s.image_url as step_image, e.image_url as e_image, ex.image_url as ex_image, u.image_url as user_image FROM step s JOIN recipe r ON s.recipe_id = r.id JOIN user u ON r.user_id = u.id LEFT JOIN experience e ON e.user_id = u.id LEFT JOIN experience ex ON r.id = ex.recipe_id WHERE u.id = ?"
+    getConnection().query(queryString, [req.params.id], (err, rows) => {
+        //we must delete user data in db even if there was an error deleting files
+        if(err){
+            console.log(err)
+        }else{
+            let images = rows.map((row) => "./public/images/" + row.recipe_image)
+            images = images.concat(rows.map((row) => "./public/images/" + row.step_image))
+            images = images.concat(rows.map((row) => "./public/images/" + row.e_image))
+            images = images.concat(rows.map((row) => "./public/images/" + row.ex_image))
+            images = images.concat(rows.map((row) => {
+                return row.user_image.replace(/http.*3000/, ".")
+            }))
+            let unique = [...new Set(images)]
+            console.log(unique)
+            unique.forEach(uri => {
+                if(fs.existsSync(uri)) fs.unlinkSync(uri)
+            });
+        }
+
+        getConnection().query("DELETE FROM user WHERE id = ?", [req.params.id], (err) => {
+            if(err){
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+        })
+
+        res.sendStatus(200)
     })
 })
 
@@ -525,6 +550,23 @@ router.get("/is_following/:id1/:id2", (req, res) => {
         res.status(200)
         res.send(rows.length > 0 ? true : false)
     })
+})
+
+//update user info
+router.put("/update_cred/:id/:email/:username/:password", (req, res) => {
+    let queryString = "UPDATE user SET username = ?, email = ?"
+    if (req.params.password != "e") {
+        queryString += ", password = '" + req.params.password + "'"
+    }
+    queryString += " WHERE id = ?"
+    getConnection().query(queryString, [req.params.username, req.params.email, req.params.id], (err) => {
+        if (err) {
+            console.log(err)
+            res.sendStatus(500)
+            return
+        }
+        res.sendStatus(200)
+    }) 
 })
 
 module.exports = router
