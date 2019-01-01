@@ -403,6 +403,7 @@ router.delete("/delete/:id", (req, res) => {
         if(err){
             console.log(err)
         }else{
+            //deleting image files related to user
             let images = rows.map((row) => "./public/images/" + row.recipe_image)
             images = images.concat(rows.map((row) => "./public/images/" + row.step_image))
             images = images.concat(rows.map((row) => "./public/images/" + row.e_image))
@@ -417,6 +418,14 @@ router.delete("/delete/:id", (req, res) => {
             });
         }
 
+        //deleting recipes of user
+        getConnection().query("DELETE FROM recipe WHERE user_id = ?", [req.params.id], (err) => {
+            if(err){
+                console.log(err)
+            }
+        })
+
+        //deleting user
         getConnection().query("DELETE FROM user WHERE id = ?", [req.params.id], (err) => {
             if(err){
                 console.log(err)
