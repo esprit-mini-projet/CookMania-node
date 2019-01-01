@@ -277,7 +277,7 @@ function manageDevices(req, res, user) {
     pool.query("SELECT * FROM devices WHERE user_id = ?", [user.id], (devErr, devRows) => {
         if (!devErr) {
             if (devRows.length != 0 && devRows[0].token != req.body.token) {
-                pool.query("UPDATE devices SET token = ?", [req.body.token], (err, rows) => {
+                pool.query("UPDATE devices SET token = ? WHERE user_id = ?", [req.body.token, user.id], (err, rows) => {
                     res.status(200)
                     res.json(user)
                 })
