@@ -425,6 +425,13 @@ router.delete("/delete/:id", (req, res) => {
             }
         })
 
+        //deleting devices of user
+        getConnection().query("DELETE FROM devices WHERE user_id = ?", [req.params.id], (err) => {
+            if(err){
+                console.log(err)
+            }
+        })
+
         //deleting user
         getConnection().query("DELETE FROM user WHERE id = ?", [req.params.id], (err) => {
             if(err){
@@ -515,7 +522,7 @@ router.post("/update_photo", (req, res) => {
                         return
                     }
                     res.status(200)
-                    res.send(imageURL)
+                    res.json(imageURL)
                 })
             })
         })
