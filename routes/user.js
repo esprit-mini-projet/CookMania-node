@@ -231,10 +231,10 @@ router.post("/follow/:follower_id/:followed_id", (req, res) => {
                         devRows.forEach(device => {
                             if(device.device_type == "ios"){
                                 notificationUtil.notifyIos(notificationType.getKey("follower"), req.params.follower_id, "", device.token, notifUser.username+" is following you", 
-                                notifUser.username+" just started following you, click here to check his profile!")
+                                notifUser.username+" just started following you. Click here to check their profile!")
                             }else{
                                 notificationUtil.notifyAndroid(notificationType.getKey("follower"), req.params.follower_id, "", device.token, notifUser.username+" is following you", 
-                                notifUser.username+" just started following you, click here to check his profile!")
+                                notifUser.username+" just started following you. Click here to check their profile!")
                             }
                         });
                     })
@@ -288,6 +288,9 @@ function manageDevices(req, res, user) {
                 })
             }else{
                 pool.query("INSERT INTO devices VALUES(?,?,?,?)", [req.body.uuid, user.id, req.body.token, req.body.type], (err, rows) => {
+                    if(err){
+                        console.log(err)
+                    }
                     console.log(req.body.uuid)
                     console.log(req.body.token)
                     console.log(devRows.length)

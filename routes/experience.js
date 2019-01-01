@@ -3,6 +3,8 @@ const mysql = require('mysql')
 const formidable = require('formidable')
 const uuidv4 = require('uuid/v4');
 var fs = require('fs');
+const notificationUtil = require("../utils/NotificationUtil")
+const notificationTypes = require("../models/notificationType")
 
 const router = express.Router()
 
@@ -77,7 +79,7 @@ router.post("/add", (req, res) => {
             res.sendStatus(500)
             return
         } 
-        pool.query("INSERT INTO experience(user_id, recipe_id, rating, comment, image_url) VALUES(?, ?, ?, ?, ?)", [fields.user_id, fields.recipe_id, fields.rating, fields.comment, newFileName], (er, rows, fields) => {
+        pool.query("INSERT INTO experience(user_id, recipe_id, rating, comment, image_url) VALUES(?, ?, ?, ?, ?)", [fields.user_id, fields.recipe_id, fields.rating, fields.comment, newFileName], (er) => {
             if(er){
                 console.log(er)
                 res.sendStatus(500)
@@ -85,6 +87,33 @@ router.post("/add", (req, res) => {
                 return
             }
             res.sendStatus(200)
+            pool.query("SELECT * FROM devices WHERE user_id = ?", [fields.owner_id], (err, rows) => {
+                if(err){
+                    console.log(err)
+                    return
+                }
+                rows.forEach(device => {
+                    if(device.type == "ios"){
+                        notificationUtil.notifyIos(
+                            notificationTypes.getKey("experience")+"",
+                            fields.recipe_id + "",
+                            fields.user_id,
+                            device.token,
+                            "Someone tried your recipe!",
+                            "Click to find out what they think."
+                        )
+                    }else{
+                        notificationUtil.notifyAndroid(
+                            notificationTypes.getKey("experience")+"",
+                            fields.recipe_id + "",
+                            fields.user_id,
+                            device.token,
+                            "Someone tried your recipe!",
+                            "Click to find out what they think."
+                        )
+                    }
+                });
+            })
         })
       })
     });
