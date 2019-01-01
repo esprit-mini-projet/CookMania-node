@@ -229,8 +229,13 @@ router.post("/follow/:follower_id/:followed_id", (req, res) => {
                     const notifUser = usRows[0]
                     pool.query("SELECT * FROM devices WHERE user_id = ?", [req.params.followed_id], (devErr, devRows) => {
                         devRows.forEach(device => {
-                            notificationUtil.notify(notificationType.getKey("follower"), req.params.follower_id, device.token, notifUser.username + " is following you",
-                                notifUser.username + " just started following you, click here to check his profile!")
+                            if(device.device_type == "ios"){
+                                notificationUtil.notifyIos(notificationType.getKey("follower"), req.params.follower_id, "", device.token, notifUser.username+" is following you", 
+                                notifUser.username+" just started following you, click here to check his profile!")
+                            }else{
+                                notificationUtil.notifyAndroid(notificationType.getKey("follower"), req.params.follower_id, "", device.token, notifUser.username+" is following you", 
+                                notifUser.username+" just started following you, click here to check his profile!")
+                            }
                         });
                     })
                 }
@@ -281,8 +286,8 @@ function manageDevices(req, res, user) {
                     res.status(200)
                     res.json(user)
                 })
-            } else {
-                pool.query("INSERT INTO devices VALUES(?,?,?)", [req.body.uuid, user.id, req.body.token], (err, rows) => {
+            }else{
+                pool.query("INSERT INTO devices VALUES(?,?,?,?)", [req.body.uuid, user.id, req.body.token, req.body.type], (err, rows) => {
                     console.log(req.body.uuid)
                     console.log(req.body.token)
                     console.log(devRows.length)
