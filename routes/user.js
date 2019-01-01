@@ -231,10 +231,10 @@ router.post("/follow/:follower_id/:followed_id", (req, res) => {
                         devRows.forEach(device => {
                             if(device.device_type == "ios"){
                                 notificationUtil.notifyIos(notificationType.getKey("follower"), req.params.follower_id, "", device.token, notifUser.username+" is following you", 
-                                notifUser.username+" just started following you, click here to check his profile!")
+                                notifUser.username+" just started following you. Click here to check their profile!")
                             }else{
                                 notificationUtil.notifyAndroid(notificationType.getKey("follower"), req.params.follower_id, "", device.token, notifUser.username+" is following you", 
-                                notifUser.username+" just started following you, click here to check his profile!")
+                                notifUser.username+" just started following you. Click here to check their profile!")
                             }
                         });
                     })
@@ -282,12 +282,15 @@ function manageDevices(req, res, user) {
     pool.query("SELECT * FROM devices WHERE user_id = ?", [user.id], (devErr, devRows) => {
         if (!devErr) {
             if (devRows.length != 0 && devRows[0].token != req.body.token) {
-                pool.query("UPDATE devices SET token = ?", [req.body.token], (err, rows) => {
+                pool.query("UPDATE devices SET token = ? WHERE user_id = ?", [req.body.token, user.id], (err, rows) => {
                     res.status(200)
                     res.json(user)
                 })
             }else{
                 pool.query("INSERT INTO devices VALUES(?,?,?,?)", [req.body.uuid, user.id, req.body.token, req.body.type], (err, rows) => {
+                    if(err){
+                        console.log(err)
+                    }
                     console.log(req.body.uuid)
                     console.log(req.body.token)
                     console.log(devRows.length)
