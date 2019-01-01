@@ -83,7 +83,7 @@ router.get("/", (req, res) => {
 
 //Get recipes by user
 router.get("/user/:id", (req, res) => {
-    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id"
+    const queryString = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id WHERE r.user_id = ? GROUP BY r.id ORDER BY r.date DESC"
     getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
@@ -359,7 +359,7 @@ router.post("/similar", (req, res) => {
     labels.forEach(label => {
         query += " OR l.label_id = "+Label.getKey(label)
     })
-    query += ") GROUP BY r.id  LIMIT 10"
+    query += ") GROUP BY r.id ORDER BY rating DESC LIMIT 10"
     pool.query(query, (err, rows) => {
         if(err){
             console.log(err)
@@ -416,11 +416,11 @@ router.post("/add", (req, res) => {
                     }))
                 }
                 Promise.all(promises).then(() => {
-                      pool.query("SELECT * FROM user WHERE id = ?", [userId], (usErr, usRows) => {
+                      pool.query("SELECT * FROM user WHERE id = ?", [user_id], (usErr, usRows) => {
                         if(!usErr){
                             notifUser = usRows[0]
                             console.log(notifUser)
-                            pool.query("SELECT * FROM following WHERE followed_id = ?", [userId], (folErr, folRows) => {
+                            pool.query("SELECT * FROM following WHERE followed_id = ?", [user_id], (folErr, folRows) => {
                                 if(!folErr){
                                     folRows.forEach(following => {
                                         pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
@@ -453,14 +453,52 @@ router.post("/add", (req, res) => {
 
 //Delete recipe
 router.delete("/:id", (req, res) => {
-    const queryString = "DELETE FROM recipe WHERE id = ?"
-    getConnection().query(queryString, [req.params.id], (err) => {
+    const queryString = "SELECT image_url FROM recipe WHERE id = ?"
+    getConnection().query(queryString, [req.params.id], (err, rows) => {
         if(err){
             console.log(err)
             res.sendStatus(500)
             return
         }
-        res.sendStatus(204)
+        var imageUrls = []
+        if(rows.length > 0) imageUrls.push("./public/images/" + rows[0].image_url)
+        const queryString = "SELECT image_url FROM step WHERE recipe_id = ?"
+        getConnection().query(queryString, [req.params.id], (err, rows) => {
+            if(err){
+                console.log(err)
+                res.sendStatus(500)
+                return
+            }
+            imageUrls = imageUrls.concat(
+                rows.filter((row) => row.image_url.length > 0)
+                .map((row) => "./public/images/" + row.image_url))
+            const queryString = "SELECT image_url FROM experience WHERE recipe_id = ?"
+            getConnection().query(queryString, [req.params.id], (err, rows) => {
+                if(err){
+                    console.log(err)
+                    res.sendStatus(500)
+                    return
+                }
+                imageUrls = imageUrls.concat(
+                    rows.filter((row) => row.image_url.length > 0)
+                    .map((row) => "./public/images/" + row.image_url))
+                console.log(imageUrls)
+                imageUrls.forEach(url => {
+                    if(fs.existsSync(url)){
+                        fs.unlinkSync(url)
+                    }  
+                })
+                const queryString = "DELETE FROM recipe WHERE id = ?"
+                getConnection().query(queryString, [req.params.id], (err) => {
+                    if(err){
+                        console.log(err)
+                        res.sendStatus(500)
+                        return
+                    }
+                    res.sendStatus(204)
+                })
+            })
+        })
     })
 })
 
@@ -517,5 +555,6 @@ router.post("/search", (req, res) => {
     })
 
 })
+
 
 module.exports = router
