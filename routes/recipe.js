@@ -41,8 +41,8 @@ router.get("/labels", (req, res) => {
     res.json(labels)
 })
 
-router.get("/notify", (req, res) => {
-    notificationUtil.notify(notificationTypes.getKey("recipe")+"", "1", registrationToken)
+router.get("/notify/:registration_token", (req, res) => {
+    notificationUtil.notifyAndroid(notificationTypes.getKey("experience")+"", "1", "au_1541965560996N3V6L", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
     res.end()
 })
 
@@ -426,8 +426,13 @@ router.post("/add", (req, res) => {
                                         pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
                                             if(!devErr){
                                                 devRows.forEach(device => {
-                                                    notificationUtil.notify(notificationTypes.getKey("recipe")+"", recipeId+"", device.token, notifUser.username +" added a new recipe",
-                                                        notifUser.username+" just added a new recipe! click here to check it!")
+                                                    if(device.device_type == "ios"){
+                                                        notificationUtil.notifyIos(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
+                                                            notifUser.username+" just added a new recipe! click here to check it!")
+                                                    }else{
+                                                        notificationUtil.notifyAndroid(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
+                                                            notifUser.username+" just added a new recipe! click here to check it!")
+                                                    }
                                                 });
                                             }
                                         })
@@ -556,5 +561,34 @@ router.post("/search", (req, res) => {
 
 })
 
+router.get("/feed/:user_id", (req, res) => {
+    pool.query("SELECT r.* FROM recipe r JOIN following f ON r.user_id = f.followed_id WHERE f.follower_id = ?",
+    [req.params.user_id], (err, rows) => {
+        var respRows = []
+        const promises = []
+        rows.forEach(row => {
+            promises.push(promises.push(new Promise((resolve, reject) => {
+                pool.query("SELECT * FROM user WHERE id = ?", [row.user_id], (uerr, urow) => {
+                    if(uerr){
+                        reject(uerr)
+                        return
+                    }
+                    respRows.push({
+                        recipe: row,
+                        user: urow[0]
+                    })
+                    resolve("ok")
+                })
+            })))
+        })
+        Promise.all(promises).then(() => {
+            respRows.sort(function (a, b) {
+                return (b.recipe.date < a.recipe.date) ? -1 : 1;
+            });
+            res.status(200)
+            res.json(respRows)
+        })
+    })
+})
 
 module.exports = router
