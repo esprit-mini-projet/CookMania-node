@@ -479,6 +479,7 @@ router.delete("/favorite/delete/:user_id", (req, res) => {
 })
 
 router.post("/logout", (req, res) => {
+    console.log("logout")
     pool.query("DELETE FROM devices WHERE uuid = ?", [req.body.uuid], (err, rows) => {
         res.sendStatus(200)
     })
