@@ -399,6 +399,7 @@ router.post("/add", (req, res) => {
                     return
                 }
                 const recipeId = rows.insertId
+                console.log(recipeId)
                 //create labels
                 const labels = JSON.parse(fields.labels)
                 console.log(labels);
@@ -418,7 +419,7 @@ router.post("/add", (req, res) => {
                 Promise.all(promises).then(() => {
                       pool.query("SELECT * FROM user WHERE id = ?", [user_id], (usErr, usRows) => {
                         if(!usErr){
-                            notifUser = usRows[0]
+                            const notifUser = usRows[0]
                             console.log(notifUser)
                             pool.query("SELECT * FROM following WHERE followed_id = ?", [user_id], (folErr, folRows) => {
                                 if(!folErr){
@@ -427,10 +428,10 @@ router.post("/add", (req, res) => {
                                             if(!devErr){
                                                 devRows.forEach(device => {
                                                     if(device.device_type == "ios"){
-                                                        notificationUtil.notifyIos(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
+                                                        notificationUtil.notifyIos(notificationTypes.getKey("recipe")+"", recipeId+"", notifUser.id, device.token, notifUser.username +" added a new recipe",
                                                             notifUser.username+" just added a new recipe! click here to check it!")
                                                     }else{
-                                                        notificationUtil.notifyAndroid(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
+                                                        notificationUtil.notifyAndroid(notificationTypes.getKey("recipe")+"", recipeId+"", notifUser.id, device.token, notifUser.username +" added a new recipe",
                                                             notifUser.username+" just added a new recipe! click here to check it!")
                                                     }
                                                 });
@@ -588,6 +589,20 @@ router.get("/feed/:user_id", (req, res) => {
             res.status(200)
             res.json(respRows)
         })
+    })
+})
+
+//add to recipe favorites count
+router.put("/add_favorites/:recipe_id", (req, res) => {
+    pool.query("UPDATE recipe SET favorites = favorites + 1 WHERE id = ?", [req.params.recipe_id], (err, rows, fields) => {
+        res.sendStatus(200)
+    })
+})
+
+//decrement recipe favorites count
+router.put("/decrement_favorites/:recipe_id", (req, res) => {
+    pool.query("UPDATE recipe SET favorites = favorites - 1 WHERE id = ?", [req.params.recipe_id], (err, rows, fields) => {
+        res.sendStatus(200)
     })
 })
 
