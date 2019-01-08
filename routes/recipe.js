@@ -42,7 +42,7 @@ router.get("/labels", (req, res) => {
 })
 
 router.get("/notify/:registration_token", (req, res) => {
-    notificationUtil.notifyAndroid(notificationTypes.getKey("experience")+"", "1", "au_1541965560996N3V6L", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
+    notificationUtil.notifyAndroid(notificationTypes.getKey("experience")+"", "7", "f_10215200091688226", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
     res.end()
 })
 
