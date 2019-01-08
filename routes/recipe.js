@@ -42,7 +42,7 @@ router.get("/labels", (req, res) => {
 })
 
 router.get("/notify/:registration_token", (req, res) => {
-    notificationUtil.notifyAndroid(notificationTypes.getKey("experience")+"", "1", "au_1541965560996N3V6L", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
+    notificationUtil.notifyAndroid(notificationTypes.getKey("follower")+"", "f_1491707600961513", "au_1541965560996N3V6L", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
     res.end()
 })
 
@@ -354,6 +354,7 @@ router.post("/create", (req, res) => {
 
 router.post("/similar", (req, res) => {
     var labels = JSON.parse(req.body.labels)
+    console.log(labels)
     var query = "SELECT r.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM recipe r left join experience e ON r.id = e.recipe_id JOIN label_recipe l ON r.id = l.recipe_id WHERE r.id != "+req.body.recipe_id+" AND (l.label_id = "+Label.getKey(labels[0])
     labels.shift()
     labels.forEach(label => {
@@ -399,6 +400,7 @@ router.post("/add", (req, res) => {
                     return
                 }
                 const recipeId = rows.insertId
+                console.log("here comes the labels")
                 //create labels
                 const labels = JSON.parse(fields.labels)
                 console.log(labels);
@@ -416,34 +418,39 @@ router.post("/add", (req, res) => {
                     }))
                 }
                 Promise.all(promises).then(() => {
-                      pool.query("SELECT * FROM user WHERE id = ?", [user_id], (usErr, usRows) => {
-                        if(!usErr){
-                            notifUser = usRows[0]
-                            console.log(notifUser)
-                            pool.query("SELECT * FROM following WHERE followed_id = ?", [user_id], (folErr, folRows) => {
-                                if(!folErr){
-                                    folRows.forEach(following => {
-                                        pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
-                                            if(!devErr){
-                                                devRows.forEach(device => {
-                                                    if(device.device_type == "ios"){
-                                                        notificationUtil.notifyIos(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
-                                                            notifUser.username+" just added a new recipe! click here to check it!")
-                                                    }else{
-                                                        notificationUtil.notifyAndroid(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
-                                                            notifUser.username+" just added a new recipe! click here to check it!")
-                                                    }
-                                                });
-                                            }
-                                        })
-                                    });
-                                }
-                            })
-                        }
-                    })
                     res.status(200)
                     res.json({
                         "id": recipeId
+                    })
+                    pool.query("SELECT * FROM user WHERE id = ?", [user_id], (usErr, usRows) => {
+                        if(usErr){
+                            console.log(usErr)
+                            return
+                        }
+                        notifUser = usRows[0]
+                        pool.query("SELECT * FROM following WHERE followed_id = ?", [user_id], (folErr, folRows) => {
+                            if(folErr){
+                                console.log(folErr)
+                                return
+                            }
+                            folRows.forEach(following => {
+                                pool.query("SELECT * FROM devices WHERE user_id = ?", [following.follower_id], (devErr, devRows) => {
+                                    if(devErr){
+                                        console.log(devErr)
+                                        return
+                                    }
+                                    devRows.forEach(device => {
+                                        if(device.device_type == "ios"){
+                                            notificationUtil.notifyIos(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
+                                                notifUser.username+" just added a new recipe! click here to check it!")
+                                        }else{
+                                            notificationUtil.notifyAndroid(notificationTypes.getKey("recipe")+"", recipeId+"", "", device.token, notifUser.username +" added a new recipe",
+                                                notifUser.username+" just added a new recipe! click here to check it!")
+                                        }
+                                    });
+                                })
+                            });
+                        })
                     })
                 }, (err) => {
                     console.log(err)
