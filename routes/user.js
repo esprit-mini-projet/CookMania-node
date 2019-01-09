@@ -173,7 +173,7 @@ router.get("/recipes/:id", (req, res) => {
 //POST
 //Create a new user
 router.post("/insert", (req, res) => {
-    const id = idGenerator.ID('au')
+    /*const id = idGenerator.ID('au')
     var form = new formidable.IncomingForm();
     console.log("hello")
     form.parse(req, function (err, fields, files) {
@@ -207,10 +207,10 @@ router.post("/insert", (req, res) => {
                     console.log("ok")
                 })
         }
-    });
+    });*/
 
 
-    /*const id = idGenerator.ID('au')
+    const id = idGenerator.ID('au')
     pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)", [
         id,
         req.body.username,
@@ -225,7 +225,7 @@ router.post("/insert", (req, res) => {
             }
             res.status(200)
             res.json({id: id})
-        })*/
+        })
 })
 
 //Create a new following
