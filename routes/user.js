@@ -173,8 +173,9 @@ router.get("/recipes/:id", (req, res) => {
 //POST
 //Create a new user
 router.post("/insert", (req, res) => {
-    const id = idGenerator.ID('au')
+    /*const id = idGenerator.ID('au')
     var form = new formidable.IncomingForm();
+    console.log("hello")
     form.parse(req, function (err, fields, files) {
         if (files.image) {
             var oldpath = files.image.path;
@@ -193,16 +194,23 @@ router.post("/insert", (req, res) => {
                     })
             })
         } else {
+            console.log(req.body.username)
             pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)",
-                [id, fields.username, fields.email, fields.password, ""], (err, rows, fields) => {
+                [id, req.body.username, req.body.email, req.body.password, req.body.image_url], (err, rows, fields) => {
+                    if(err){
+                        console.log(err)
+                        res.sendStatus(500)
+                        return
+                    }
                     res.status(200)
-                    res.json("OK")
+                    res.json({id: rows.insertId})
+                    console.log("ok")
                 })
         }
-    });
+    });*/
 
 
-    /*const id = idGenerator.ID('au')
+    const id = idGenerator.ID('au')
     pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)", [
         id,
         req.body.username,
@@ -217,7 +225,7 @@ router.post("/insert", (req, res) => {
             }
             res.status(200)
             res.json({id: id})
-        })*/
+        })
 })
 
 //Create a new following
