@@ -20,8 +20,8 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    //port: 8889,
-    //password: "root"
+    port: 8889,
+    password: "root"
 })
 
 function getConnection(){
@@ -570,8 +570,15 @@ router.post("/search", (req, res) => {
 })
 
 router.get("/feed/:user_id", (req, res) => {
-    pool.query("SELECT r.* FROM recipe r JOIN following f ON r.user_id = f.followed_id WHERE f.follower_id = ?",
+    pool.query("SELECT rec.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM (SELECT r.* FROM recipe r JOIN following f ON r.user_id = f.followed_id WHERE f.follower_id = ?) rec LEFT JOIN experience e ON e.recipe_id = rec.id GROUP BY rec.id ORDER BY rec.date DESC",
     [req.params.user_id], (err, rows) => {
+        //getting the dimensions for each recipe image
+        rows = rows.map((row) => {
+            const dimensions = sizeOf("public/images/" + row.image_url)
+            row.height = dimensions.height
+            row.width = dimensions.width
+            return row
+        })
         var respRows = []
         const promises = []
         rows.forEach(row => {
@@ -590,9 +597,9 @@ router.get("/feed/:user_id", (req, res) => {
             })))
         })
         Promise.all(promises).then(() => {
-            respRows.sort(function (a, b) {
+            /*respRows.sort(function (a, b) {
                 return (b.recipe.date < a.recipe.date) ? -1 : 1;
-            });
+            });*/
             res.status(200)
             res.json(respRows)
         })
