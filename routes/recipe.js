@@ -41,6 +41,17 @@ router.get("/labels", (req, res) => {
     res.json(labels)
 })
 
+router.get("/labels_flat", (req, res) => {
+    var labels = []
+    const dict = Label.dict
+    Object.keys(dict).forEach(cat => {
+        Object.keys(dict[cat]).forEach(label => {
+            labels.push(dict[cat][label])
+        })
+    });
+    res.json(labels)
+})
+
 router.get("/notify/:registration_token", (req, res) => {
     notificationUtil.notifyAndroid(notificationTypes.getKey("follower")+"", "f_1491707600961513", "au_1541965560996N3V6L", req.params.registration_token, "TEST", "THIS IS MY MESSAGE")
     res.end()
