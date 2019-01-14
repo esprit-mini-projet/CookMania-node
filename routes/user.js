@@ -16,8 +16,8 @@ const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     database: "cookmania",
-    //port: 8889,
-    //password: "root"
+    port: 8889,
+    password: "root"
 })
 
 function getConnection() {
@@ -287,10 +287,11 @@ router.get("/check_email/:email", (req, res) => {
 })
 
 function manageDevices(req, res, user) {
+    console.log(req.body.token)
     pool.query("SELECT * FROM devices WHERE user_id = ?", [user.id], (devErr, devRows) => {
         if (!devErr) {
-            if (devRows.length != 0 && devRows[0].token != req.body.token) {
-                pool.query("UPDATE devices SET token = ? WHERE user_id = ?", [req.body.token, user.id], (err, rows) => {
+            if (devRows.length != 0 && devRows[0].uuid == req.body.uuid) {
+                pool.query("UPDATE devices SET token = ? WHERE uuid = ?", [req.body.token, req.body.uuid], (err, rows) => {
                     res.status(200)
                     res.json(user)
                 })
@@ -488,6 +489,7 @@ router.delete("/favorite/delete/:user_id", (req, res) => {
 
 router.post("/logout", (req, res) => {
     console.log("logout")
+    console.log(req.body.uuid)
     pool.query("DELETE FROM devices WHERE uuid = ?", [req.body.uuid], (err, rows) => {
         res.sendStatus(200)
     })
