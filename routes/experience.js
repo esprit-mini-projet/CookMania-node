@@ -93,7 +93,7 @@ router.post("/add", (req, res) => {
                     return
                 }
                 rows.forEach(device => {
-                    if(device.type == "ios"){
+                    if(device.device_type == "ios"){
                         notificationUtil.notifyIos(
                             notificationTypes.getKey("experience")+"",
                             fields.recipe_id + "",
