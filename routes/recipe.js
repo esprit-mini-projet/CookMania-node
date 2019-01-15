@@ -581,7 +581,7 @@ router.post("/search", (req, res) => {
 })
 
 router.get("/feed/:user_id", (req, res) => {
-    pool.query("SELECT rec.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM (SELECT r.* FROM recipe r JOIN following f ON r.user_id = f.followed_id WHERE f.follower_id = ?) rec LEFT JOIN experience e ON e.recipe_id = rec.id GROUP BY rec.id ORDER BY rec.date DESC",
+    pool.query("SELECT rec.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM (SELECT r.* FROM recipe r JOIN following f ON r.user_id = f.followed_id WHERE f.follower_id = ?) rec LEFT JOIN experience e ON e.recipe_id = rec.id GROUP BY rec.id",
     [req.params.user_id], (err, rows) => {
         //getting the dimensions for each recipe image
         rows = rows.map((row) => {
@@ -608,9 +608,9 @@ router.get("/feed/:user_id", (req, res) => {
             })))
         })
         Promise.all(promises).then(() => {
-            /*respRows.sort(function (a, b) {
+            respRows.sort(function (a, b) {
                 return (b.recipe.date < a.recipe.date) ? -1 : 1;
-            });*/
+            });
             res.status(200)
             res.json(respRows)
         })
