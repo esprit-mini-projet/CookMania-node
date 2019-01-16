@@ -429,6 +429,7 @@ router.delete("/delete/:id", (req, res) => {
                 return row.user_image.replace(/http.*3000/, ".")
             }))
             let unique = [...new Set(images)]
+            unique = unique.filter((imageUrl) => !imageUrl.includes("default"))
             console.log(unique)
             unique.forEach(uri => {
                 if(fs.existsSync(uri)) fs.unlinkSync(uri)
