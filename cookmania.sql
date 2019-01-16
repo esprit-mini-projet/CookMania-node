@@ -2,10 +2,10 @@
 -- version 4.8.3
 -- https://www.phpmyadmin.net/
 --
--- Hôte : 127.0.0.1:3306
--- Généré le :  mar. 08 jan. 2019 à 22:55
--- Version du serveur :  5.7.23
--- Version de PHP :  7.2.10
+-- Host: 127.0.0.1:3306
+-- Generation Time: Jan 16, 2019 at 05:02 AM
+-- Server version: 5.7.23
+-- PHP Version: 7.2.10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
@@ -19,13 +19,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de données :  `cookmania`
+-- Database: `cookmania`
 --
 
 -- --------------------------------------------------------
 
 --
--- Structure de la table `devices`
+-- Table structure for table `devices`
 --
 
 DROP TABLE IF EXISTS `devices`;
@@ -38,17 +38,10 @@ CREATE TABLE IF NOT EXISTS `devices` (
   KEY `user_devices` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Déchargement des données de la table `devices`
---
-
-INSERT INTO `devices` (`uuid`, `user_id`, `token`, `device_type`) VALUES
-('009d1a9a-4732-4c38-ac2f-ca6a92cf710d', 'au_1546981529351QW2JT', 'dDXCX6by1AU:APA91bHqqwu8u2d796ZP_I2ariNUD4UEiojMhiIh9vqAgGShhGiNgk7FiX3TPmamow_12MzAzm3Ks4GvI9Xz80GdGTcOXmwiZPmhNImPhBsq3uYjrp1rUXHi_TQIu6I8Sg8iif6If3_R', 'and');
-
 -- --------------------------------------------------------
 
 --
--- Structure de la table `experience`
+-- Table structure for table `experience`
 --
 
 DROP TABLE IF EXISTS `experience`;
@@ -63,10 +56,26 @@ CREATE TABLE IF NOT EXISTS `experience` (
   KEY `exp_recipe` (`recipe_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+--
+-- Dumping data for table `experience`
+--
+
+INSERT INTO `experience` (`user_id`, `recipe_id`, `rating`, `comment`, `image_url`, `date`) VALUES
+('f_10215200091688226', 32, 2, 'nice ', '2572b90f-a3a8-4ba9-bec6-876147efc490.png', '2019-01-09 08:19:05'),
+('f_10215200091688226', 35, 5, 'good one', '7dadb68f-23b3-4899-b756-c1887d50e519.png', '2019-01-09 08:17:19'),
+('f_10215200091688226', 39, 3, 'interesting', 'f0b926a9-d286-44c4-9f15-ac1361e24aff.png', '2019-01-09 08:17:59'),
+('f_1491707600961513', 28, 4, 'very nice', 'c40dbb06-84f3-4c5f-b191-a835c1860301.png', '2019-01-09 08:23:12'),
+('f_1491707600961513', 41, 4, 'nice', 'dd84cdde-a779-4802-be5d-98ec0cfe8b81.png', '2019-01-09 08:36:24'),
+('g_116062777271504156046', 27, 4, 'nice', '2d2241e2-6c9f-465c-88af-8b4ebc067be4.png', '2019-01-09 08:05:18'),
+('g_116062777271504156046', 29, 3, 'enjoyed it', 'a88d84d6-eaa2-43e7-bd8e-437ad09b8413.png', '2019-01-09 08:06:18'),
+('g_116062777271504156046', 32, 2, 'It wasn\'t what i expected', '37b9895b-6891-46cf-8e5e-322d060c763d.png', '2019-01-09 08:04:14'),
+('g_116062777271504156046', 35, 4, 'Delicious', '12c62d92-bef2-459a-a32b-40fdf16cb483.png', '2019-01-09 08:02:26'),
+('g_116062777271504156046', 39, 3, 'very nice', '698e81a1-3ff2-4489-9a2c-f59f3e8ece84.png', '2019-01-09 08:03:14');
+
 -- --------------------------------------------------------
 
 --
--- Structure de la table `following`
+-- Table structure for table `following`
 --
 
 DROP TABLE IF EXISTS `following`;
@@ -78,10 +87,18 @@ CREATE TABLE IF NOT EXISTS `following` (
   KEY `followed_user` (`followed_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+--
+-- Dumping data for table `following`
+--
+
+INSERT INTO `following` (`follower_id`, `followed_id`, `date`) VALUES
+('f_1491707600961513', 'au_1546981529351QW2JT', '2019-01-09 08:33:25'),
+('g_114634186067504128367', 'au_1546981529351QW2JT', '2019-01-09 07:44:30');
+
 -- --------------------------------------------------------
 
 --
--- Structure de la table `ingredient`
+-- Table structure for table `ingredient`
 --
 
 DROP TABLE IF EXISTS `ingredient`;
@@ -93,10 +110,10 @@ CREATE TABLE IF NOT EXISTS `ingredient` (
   `unit` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `ing_step` (`step_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=105 DEFAULT CHARSET=latin1;
 
 --
--- Déchargement des données de la table `ingredient`
+-- Dumping data for table `ingredient`
 --
 
 INSERT INTO `ingredient` (`id`, `step_id`, `name`, `quantity`, `unit`) VALUES
@@ -174,12 +191,16 @@ INSERT INTO `ingredient` (`id`, `step_id`, `name`, `quantity`, `unit`) VALUES
 (97, 54, 'Pepperoni', 500, 0),
 (98, 55, 'Lettuce', 2, 1),
 (99, 55, 'Cheese', 200, 0),
-(100, 55, 'Radicchio', 4, 2);
+(100, 55, 'Radicchio', 4, 2),
+(101, 56, 'tg', 25, 2),
+(102, 56, 'fhk', 56, 2),
+(103, 57, 'gh', 36, 0),
+(104, 58, 'test', 6, 2);
 
 -- --------------------------------------------------------
 
 --
--- Structure de la table `label_recipe`
+-- Table structure for table `label_recipe`
 --
 
 DROP TABLE IF EXISTS `label_recipe`;
@@ -190,7 +211,7 @@ CREATE TABLE IF NOT EXISTS `label_recipe` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Déchargement des données de la table `label_recipe`
+-- Dumping data for table `label_recipe`
 --
 
 INSERT INTO `label_recipe` (`recipe_id`, `label_id`) VALUES
@@ -258,12 +279,19 @@ INSERT INTO `label_recipe` (`recipe_id`, `label_id`) VALUES
 (39, 4),
 (39, 7),
 (39, 8),
-(39, 11);
+(39, 11),
+(40, 1),
+(40, 3),
+(40, 4),
+(40, 6),
+(40, 10),
+(41, 0),
+(41, 8);
 
 -- --------------------------------------------------------
 
 --
--- Structure de la table `periodic_suggestions`
+-- Table structure for table `periodic_suggestions`
 --
 
 DROP TABLE IF EXISTS `periodic_suggestions`;
@@ -275,7 +303,7 @@ CREATE TABLE IF NOT EXISTS `periodic_suggestions` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 --
--- Déchargement des données de la table `periodic_suggestions`
+-- Dumping data for table `periodic_suggestions`
 --
 
 INSERT INTO `periodic_suggestions` (`id`, `label_id`, `title`) VALUES
@@ -284,7 +312,7 @@ INSERT INTO `periodic_suggestions` (`id`, `label_id`, `title`) VALUES
 -- --------------------------------------------------------
 
 --
--- Structure de la table `recipe`
+-- Table structure for table `recipe`
 --
 
 DROP TABLE IF EXISTS `recipe`;
@@ -304,27 +332,27 @@ CREATE TABLE IF NOT EXISTS `recipe` (
 ) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=latin1;
 
 --
--- Déchargement des données de la table `recipe`
+-- Dumping data for table `recipe`
 --
 
 INSERT INTO `recipe` (`id`, `name`, `description`, `calories`, `servings`, `image_url`, `date`, `views`, `favorites`, `time`, `user_id`) VALUES
-(27, 'Almond Butter and Banana Pancakes', 'Pancakes made of bananas and almond butter?? Enough said. The protein here comes from the eggs, which also give these sweet, nutty pancakes a light, crepe-like texture.', 956, 10, '939ada73-1a36-4f8a-b9c9-bacdcc76b95c.png', '2019-01-08 21:31:21', 1, 0, 20, 'au_1546981529351QW2JT'),
-(28, 'Arugula and Persimmon Salad with Pistachio Vinaigrette', 'For this gorgeous salad, choose persimmons that are super soft. The riper the fruit, the sweeter the flavor. High in fiber, B and C vitamins, and plenty of antioxidants, the sweet persimmons pair perfectly with the arugula’s snap and the complexity of the pistachio dressing.', 780, 10, 'bac4f209-a81b-4c29-bf94-b818a7b926c6.png', '2019-01-08 21:42:46', 1, 0, 15, 'au_1546981529351QW2JT'),
-(29, 'Beef and Cheddar Casserole', 'A good recipe for the family to enjoy over dinner or lunch.', 1600, 10, '706c7e83-8001-479d-b2af-77c47f7605ee.png', '2019-01-08 21:52:23', 1, 0, 55, 'au_1546981529351QW2JT'),
+(27, 'Almond Butter and Banana Pancakes', 'Pancakes made of bananas and almond butter?? Enough said. The protein here comes from the eggs, which also give these sweet, nutty pancakes a light, crepe-like texture.', 956, 10, '939ada73-1a36-4f8a-b9c9-bacdcc76b95c.png', '2019-01-08 21:31:21', 3, 0, 20, 'au_1546981529351QW2JT'),
+(28, 'Arugula and Persimmon Salad with Pistachio Vinaigrette', 'For this gorgeous salad, choose persimmons that are super soft. The riper the fruit, the sweeter the flavor. High in fiber, B and C vitamins, and plenty of antioxidants, the sweet persimmons pair perfectly with the arugula’s snap and the complexity of the pistachio dressing.', 780, 10, 'bac4f209-a81b-4c29-bf94-b818a7b926c6.png', '2019-01-08 21:42:46', 5, 0, 15, 'au_1546981529351QW2JT'),
+(29, 'Beef and Cheddar Casserole', 'A good recipe for the family to enjoy over dinner or lunch.', 1600, 10, '706c7e83-8001-479d-b2af-77c47f7605ee.png', '2019-01-08 21:52:23', 2, 0, 55, 'au_1546981529351QW2JT'),
 (30, 'Baked Tortellini with Kale Pesto', 'A recipe for those who enjoy eating healthy and keeping fit. Nice to have on a chill evening with friends.', 642, 10, '9149e25a-95ee-43cc-ad99-ca42291164b7.png', '2019-01-08 21:59:09', 1, 0, 40, 'au_1546981529351QW2JT'),
-(31, 'Buffalo Chicken Calzone', 'This recipe is tasty and very easy to make. Great to slice up for a party or for Sunday football. Serve with blue cheese dressing for dipping sauce.', 572, 10, 'ac8be8a6-e925-4dda-bf4d-0cf54b90f6ab.png', '2019-01-08 22:05:26', 1, 0, 55, 'au_1546981529351QW2JT'),
-(32, 'Crispy Pork Chops with Sriracha Brussels Sprouts', 'A recipe for meat lovers. Enjoy this one with family and friends during weekends or even on a date.', 1200, 10, 'b862f56c-1278-4a4e-8e0a-2a4193f72c83.png', '2019-01-08 22:15:46', 1, 0, 40, 'au_1546981529351QW2JT'),
-(33, 'Grilled Salmon and Polenta', 'Fish lovers dig this recipe. I eat every weekend with the kids to make them have a nice day.', 1430, 10, 'a9b89ef4-d3dc-45ed-9d8e-14ec39c6ad34.png', '2019-01-08 22:23:48', 1, 0, 35, 'au_1546981529351QW2JT'),
-(34, 'Hamburger Steak with Onions and Gravy', 'An easy-to-make classic featuring tasty hamburger \'steaks\' smothered in gravy and onions. Traditionally served with hot white rice or potatoes, it\'s a great way to dress up a pound of ground beef and you probably have all the ingredients on hand!', 319, 10, '57e00316-4551-4c34-adf6-d0a33646dc46.png', '2019-01-08 22:27:20', 1, 0, 40, 'au_1546981529351QW2JT'),
-(35, 'Lighter Chicken Parmesan', 'Nice lunch for the kids to make them grow and enjoy the healthiest life possible. I encourage you to try it :D', 542, 10, '664e06ed-71ef-48ca-9958-5f8574df3b7f.png', '2019-01-08 22:31:17', 1, 0, 16, 'au_1546981529351QW2JT'),
-(36, 'Roasted Brussels Sprouts', 'This recipe is from my mother. It may sound strange, but these are really good and very easy to make. The Brussels sprouts should be brown with a bit of black on the outside when done. Any leftovers can be reheated or even just eaten cold from the fridge. I don\'t know how, but they taste sweet and salty at the same time!', 104, 10, '47136462-0c87-404e-9e82-9116f688328b.png', '2019-01-08 22:33:33', 1, 0, 60, 'au_1546981529351QW2JT'),
-(38, 'Mediterranean Chicken Medley with Eggplant and Feta', 'Low-calorie, low-carb dinners can be absolutely delicious if done right! This one is full of color, flavor, and texture. I make this one often and it is always a hit! Hope you will enjoy as well.', 349, 10, 'fee30afc-7d97-48bd-b375-a3e5cf3c514b.png', '2019-01-08 22:41:52', 1, 0, 100, 'au_1546981529351QW2JT'),
-(39, 'Winter Italian Chopped Salad', 'Pepperoni, marinated artichoke hearts, and canned chickpeas are roasted together to make a warm and crisp foundation for this wintry riff on an Italian chopped salad. Fresh oranges balance out the salty and savory flavors.', 560, 10, 'fb5aa1de-119f-4229-90f6-18f69312f597.png', '2019-01-08 22:49:24', 1, 0, 45, 'au_1546981529351QW2JT');
+(31, 'Buffalo Chicken Calzone', 'This recipe is tasty and very easy to make. Great to slice up for a party or for Sunday football. Serve with blue cheese dressing for dipping sauce.', 572, 10, 'ac8be8a6-e925-4dda-bf4d-0cf54b90f6ab.png', '2019-01-08 22:05:26', 2, 1, 55, 'au_1546981529351QW2JT'),
+(32, 'Crispy Pork Chops with Sriracha Brussels Sprouts', 'A recipe for meat lovers. Enjoy this one with family and friends during weekends or even on a date.', 1200, 10, 'b862f56c-1278-4a4e-8e0a-2a4193f72c83.png', '2019-01-08 22:15:46', 4, 0, 40, 'au_1546981529351QW2JT'),
+(33, 'Grilled Salmon and Polenta', 'Fish lovers dig this recipe. I eat every weekend with the kids to make them have a nice day.', 1430, 10, 'a9b89ef4-d3dc-45ed-9d8e-14ec39c6ad34.png', '2019-01-08 22:23:48', 1, 0, 35, 'f_1491707600961513'),
+(34, 'Hamburger Steak with Onions and Gravy', 'An easy-to-make classic featuring tasty hamburger \'steaks\' smothered in gravy and onions. Traditionally served with hot white rice or potatoes, it\'s a great way to dress up a pound of ground beef and you probably have all the ingredients on hand!', 319, 10, '57e00316-4551-4c34-adf6-d0a33646dc46.png', '2019-01-08 22:27:20', 1, 0, 40, 'f_1491707600961513'),
+(35, 'Lighter Chicken Parmesan', 'Nice lunch for the kids to make them grow and enjoy the healthiest life possible. I encourage you to try it :D', 542, 10, '664e06ed-71ef-48ca-9958-5f8574df3b7f.png', '2019-01-08 22:31:17', 4, 1, 16, 'f_1491707600961513'),
+(36, 'Roasted Brussels Sprouts', 'This recipe is from my mother. It may sound strange, but these are really good and very easy to make. The Brussels sprouts should be brown with a bit of black on the outside when done. Any leftovers can be reheated or even just eaten cold from the fridge. I don\'t know how, but they taste sweet and salty at the same time!', 104, 10, '47136462-0c87-404e-9e82-9116f688328b.png', '2019-01-08 22:33:33', 1, 0, 60, 'f_1491707600961513'),
+(38, 'Mediterranean Chicken Medley with Eggplant and Feta', 'Low-calorie, low-carb dinners can be absolutely delicious if done right! This one is full of color, flavor, and texture. I make this one often and it is always a hit! Hope you will enjoy as well.', 349, 10, 'fee30afc-7d97-48bd-b375-a3e5cf3c514b.png', '2019-01-08 22:41:52', 1, 0, 100, 'f_1491707600961513'),
+(39, 'Winter Italian Chopped Salad', 'Pepperoni, marinated artichoke hearts, and canned chickpeas are roasted together to make a warm and crisp foundation for this wintry riff on an Italian chopped salad. Fresh oranges balance out the salty and savory flavors.', 560, 10, 'fb5aa1de-119f-4229-90f6-18f69312f597.png', '2019-01-08 22:49:24', 4, 0, 45, 'f_1491707600961513');
 
 -- --------------------------------------------------------
 
 --
--- Structure de la table `step`
+-- Table structure for table `step`
 --
 
 DROP TABLE IF EXISTS `step`;
@@ -339,7 +367,7 @@ CREATE TABLE IF NOT EXISTS `step` (
 ) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=latin1;
 
 --
--- Déchargement des données de la table `step`
+-- Dumping data for table `step`
 --
 
 INSERT INTO `step` (`id`, `recipe_id`, `description`, `time`, `image_url`) VALUES
@@ -386,7 +414,7 @@ INSERT INTO `step` (`id`, `recipe_id`, `description`, `time`, `image_url`) VALUE
 -- --------------------------------------------------------
 
 --
--- Structure de la table `user`
+-- Table structure for table `user`
 --
 
 DROP TABLE IF EXISTS `user`;
@@ -403,50 +431,22 @@ CREATE TABLE IF NOT EXISTS `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Déchargement des données de la table `user`
+-- Dumping data for table `user`
 --
 
 INSERT INTO `user` (`id`, `username`, `email`, `password`, `date`, `image_url`, `following`, `followers`) VALUES
-('au_1546981529351QW2JT', 'elyes007', 'elyes@gmail.com', '1234', '2019-01-08 21:05:39', 'http://192.168.1.3:3000/public/images/default_profile_picture.png', 0, 0);
+('au_1546981529351QW2JT', 'elyes007', 'elyes@gmail.com', '1234', '2019-01-08 21:05:39', 'http://192.168.43.203:3000/public/images/profile/d54f18e1-33eb-490c-8e63-316dcd09527c.png', 0, 2),
+('f_10215200091688226', 'Elyes Mansour', 'chebbaelyes@gmail.com', '', '2019-01-09 08:16:11', 'https://graph.facebook.com/10215200091688226/picture?height=600', 0, 0),
+('f_1491707600961513', 'Seif Abdennadher', 'm.abdennadher.seif@gmail.com', '', '2019-01-09 00:54:30', 'https://graph.facebook.com/1491707600961513/picture?height=600', 1, 0),
+('g_114634186067504128367', 'ABDENNADHER Seif', 'seif.abdennadher@esprit.tn', '', '2019-01-09 07:33:32', 'http://192.168.43.203:3000/public/images/default_profile_picture.png', 1, 0),
+('g_116062777271504156046', 'Elyes Mansour', 'elyes.mansour@esprit.tn', '', '2019-01-09 08:00:30', 'https://lh3.googleusercontent.com/a-/AAuE7mD-1qMN1HXmD20AiVzmJ-kUhY-3w5BrnMUiiJ91', 0, 0);
 
 --
--- Contraintes pour les tables déchargées
+-- Constraints for dumped tables
 --
 
 --
--- Contraintes pour la table `devices`
---
-ALTER TABLE `devices`
-  ADD CONSTRAINT `user_devices` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `experience`
---
-ALTER TABLE `experience`
-  ADD CONSTRAINT `exp_recipe` FOREIGN KEY (`recipe_id`) REFERENCES `recipe` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `exp_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `following`
---
-ALTER TABLE `following`
-  ADD CONSTRAINT `followed_user` FOREIGN KEY (`followed_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `follower_user` FOREIGN KEY (`follower_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `ingredient`
---
-ALTER TABLE `ingredient`
-  ADD CONSTRAINT `ing_step` FOREIGN KEY (`step_id`) REFERENCES `step` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `label_recipe`
---
-ALTER TABLE `label_recipe`
-  ADD CONSTRAINT `labrec_recipe` FOREIGN KEY (`recipe_id`) REFERENCES `recipe` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `step`
+-- Constraints for table `step`
 --
 ALTER TABLE `step`
   ADD CONSTRAINT `step_recipe` FOREIGN KEY (`recipe_id`) REFERENCES `recipe` (`id`) ON DELETE CASCADE;
