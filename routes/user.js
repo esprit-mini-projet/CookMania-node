@@ -214,7 +214,7 @@ router.post("/add", (req, res) => {
         } else {
             console.log(fields.username)
             pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)",
-                [id, fields.username, fields.email, fields.password, ""], (err, rows, fields) => {
+                [id, fields.username, fields.email, fields.password, "http://" + ip.address() + ":3000/public/images/default_profile_picture.png"], (err, rows, fields) => {
                     if(err){
                         console.log(err)
                         res.sendStatus(500)
