@@ -18,6 +18,6 @@ app.use("/recipes", recipeRoute)
 app.use("/steps", stepRoute)
 app.use('/experiences', experienceRoute)
 
-app.listen(3000, () => {
-    console.log("Server is up and listening on port 3000...")
+app.listen(3012, () => {
+    console.log("Server is up and listening on port 3012...")
 })
