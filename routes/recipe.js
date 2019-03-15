@@ -18,10 +18,10 @@ const router = Router()
 const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
-    user: "root",
+    user: "cookmania",
     database: "cookmania",
-    port: 8889,
-    password: "root"
+    //port: 8889,
+    password: "C5wqfNFLvJBnnXK3"
 })
 
 function getConnection(){
@@ -583,6 +583,11 @@ router.post("/search", (req, res) => {
 router.get("/feed/:user_id", (req, res) => {
     pool.query("SELECT rec.*, IFNULL(ROUND(AVG(e.rating), 1), 0) rating FROM (SELECT r.* FROM recipe r JOIN following f ON r.user_id = f.followed_id WHERE f.follower_id = ?) rec LEFT JOIN experience e ON e.recipe_id = rec.id GROUP BY rec.id",
     [req.params.user_id], (err, rows) => {
+        if(err){
+            res.sendStatus(500)
+            console.log(err)
+            return
+        }
         //getting the dimensions for each recipe image
         rows = rows.map((row) => {
             const dimensions = sizeOf("public/images/" + row.image_url)

@@ -11,10 +11,10 @@ const router = express.Router()
 const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
-    user: "root",
+    user: "cookmania",
     database: "cookmania",
-    port: 8889,
-    password: "root"
+    //port: 8889,
+    password: "C5wqfNFLvJBnnXK3"
 })
 
 function getConnection(){

@@ -8,16 +8,17 @@ const ip = require('ip')
 const uuidv4 = require('uuid/v4');
 var fs = require('fs');
 const os = require( 'os' )
+const ipAddress = require('../utils/ipAddress')
 
 const router = express.Router()
 
 const pool = mysql.createPool({
     connectionLimit: 10,
     host: "localhost",
-    user: "root",
+    user: "cookmania",
     database: "cookmania",
-    port: 8889,
-    password: "root"
+    //port: 8889,
+    password: "C5wqfNFLvJBnnXK3"
 })
 
 function getConnection() {
@@ -205,7 +206,7 @@ router.post("/add", (req, res) => {
                     res.sendStatus(500)
                     return
                 }
-                var imageURL = "http://" + ip.address() + ":3000/public/images/profile/" + newFileName
+                var imageURL = "http://" + ipAddress + "/public/images/profile/" + newFileName
                 pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)",
                     [id, fields.username, fields.email, fields.password, imageURL], (err, rows, fields) => {
                         res.sendStatus(200)
@@ -214,7 +215,7 @@ router.post("/add", (req, res) => {
         } else {
             console.log(fields.username)
             pool.query("INSERT INTO user(id, username, email, password, image_url) VALUES (?, ?, ?, ?, ?)",
-                [id, fields.username, fields.email, fields.password, "http://" + ip.address() + ":3000/public/images/default_profile_picture.png"], (err, rows, fields) => {
+                [id, fields.username, fields.email, fields.password, "http://" + ipAddress + "/public/images/default_profile_picture.png"], (err, rows, fields) => {
                     if(err){
                         console.log(err)
                         res.sendStatus(500)
@@ -392,7 +393,7 @@ router.post("/update", (req, res) => {
                         fs.unlink("." + user.image_url.slice(-63), function (fse) { })
                     }
                 })
-                imageURL = "http://" + ip.address() + ":3000/public/images/profile/" + newFileName
+                imageURL = "http://" + ipAddress + "/public/images/profile/" + newFileName
                 if (imageURL != "") {
                     query += " image_url = '" + imageURL + "'"
                 }
@@ -532,8 +533,8 @@ router.post("/update_photo", (req, res) => {
                     oldImageUrl = oldImageUrl.replace(/http.*3000/, ".")
                 }
                 if(oldImageUrl != null && fs.existsSync(oldImageUrl)) fs.unlinkSync(oldImageUrl)
-                const ipAddress = os.networkInterfaces()["Wi-Fi"][1].address
-                const imageURL = "http://" + ipAddress + ":3000/public/images/profile/" + newFileName
+                //const ipAddress = os.networkInterfaces()["Wi-Fi"][1].address
+                const imageURL = "http://" + ipAddress + "/public/images/profile/" + newFileName
                 pool.query("UPDATE user SET image_url = ? WHERE id = ?", [imageURL, userId], (err) => {
                     if (err) {
                         console.log(err)
@@ -603,6 +604,10 @@ router.put("/update_cred/:id/:email/:username/:password", (req, res) => {
         }
         res.sendStatus(200)
     }) 
+})
+
+router.get("/check_connection", (req, res) => {
+    res.sendStatus(200)
 })
 
 module.exports = router
