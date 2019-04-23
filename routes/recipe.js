@@ -28,6 +28,12 @@ function getConnection(){
     return pool
 }
 
+var util = require("util")
+var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'})
+function logToFile(err){
+    log_file.write(util.format(err) + '\n');
+}
+
 router.get("/labels", (req, res) => {
     var labels = []
     const dict = Label.dict
@@ -290,6 +296,7 @@ router.post("/create", (req, res) => {
     getConnection().query(queryString, [name,description,calories,servings,imageUrl,0,time,user.id, 0], (err, rows) => {
         if(err){
             console.log(err)
+            logToFile(err)
             res.sendStatus(500)
             return
         }
@@ -321,6 +328,7 @@ router.post("/create", (req, res) => {
                     getConnection().query(queryString, [recipeId, step.description, step.time, step.image_url], (err, rows) => {
                         if(err){
                             console.log(err)
+                            logToFile(err)
                             res.sendStatus(500)
                             reject(err)
                         }
@@ -335,6 +343,7 @@ router.post("/create", (req, res) => {
                                 getConnection().query(queryString, [step.id, ingredient.name, ingredient.quantity, Unit.getKey(ingredient.unit)], (err) => {
                                     if(err){
                                         console.log(err)
+                                        logToFile(err)
                                         res.sendStatus(500)
                                         reject2(err)
                                     }
@@ -354,10 +363,12 @@ router.post("/create", (req, res) => {
                 getRecipeById(recipeId, res)
             }, (err) => {
                 console.log(err)
+                logToFile(err)
                 res.sendStatus(500)
             })
         }, (err) => {
             console.log(err)
+            logToFile(err)
             res.sendStatus(500)
         })
     })
@@ -392,6 +403,7 @@ router.post("/add", (req, res) => {
         fs.rename(oldpath, newpath, function (err) {
             if (err) {
                 console.log(err)
+                logToFile(err)
                 res.sendStatus(500)
                 return
             }
@@ -406,12 +418,14 @@ router.post("/add", (req, res) => {
             getConnection().query(queryString, [name,description,calories,servings,newFileName,0,time,user_id, 0], (err, rows) => {
                 if(err){
                     console.log(err)
+                    logToFile(err)
                     res.sendStatus(500)
                     fs.unlinkSync(newpath)
                     return
                 }
                 const recipeId = rows.insertId
                 console.log("here comes the labels")
+                logToFile("here come the labels")
                 console.log(recipeId)
                 //create labels
                 const labels = JSON.parse(fields.labels)
@@ -424,6 +438,8 @@ router.post("/add", (req, res) => {
                         getConnection().query(queryString, [recipeId, label], (err) => {
                             if(err){
                                 reject(err)
+                                logToFile(err)
+                                return
                             }
                             resolve("ok")
                         })
@@ -466,6 +482,7 @@ router.post("/add", (req, res) => {
                     })
                 }, (err) => {
                     console.log(err)
+                    logToFile(err)
                     res.sendStatus(500)
                     fs.unlinkSync(newpath)
                     getConnection().query("DELETE FROM recipe WHERE id = ?", [recipeId])

@@ -20,6 +20,12 @@ function getConnection(){
     return pool
 }
 
+var util = require("util")
+var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'})
+function logToFile(err){
+    log_file.write(util.format(err) + '\n');
+}
+
 //Get steps by recipeId
 router.get("/:recipeId", (req, res) => {
     const queryString = "SELECT * FROM step WHERE recipe_id = ?"
@@ -45,6 +51,7 @@ router.post("/add", (req, res) => {
             fs.rename(oldpath, newpath, function (err) {
                 if (err) {
                     console.log(err)
+                    logToFile(err)
                     res.sendStatus(500)
                     getConnection().query("DELETE FROM recipe WHERE id = ?", [fields.recipe_id])
                     return
@@ -66,6 +73,7 @@ const addStep = (fileName, fields, res) => {
     getConnection().query(queryString, [recipeId, description, time, fileName], (err, rows) => {
         if(err){
             console.log(err)
+            logToFile(err)
             res.sendStatus(500)
             if(fileName != ""){
                 fs.unlinkSync("./public/images/" + fileName)
@@ -73,6 +81,7 @@ const addStep = (fileName, fields, res) => {
             getConnection().query("SELECT image_url FROM recipe WHERE id = ?", [recipeId], (err, rows) => {
                 if(err){
                     console.log(err)
+                    logToFile(err)
                     return
                 }
                 fs.unlinkSync("./public/images/" + rows[0].image_url)
@@ -93,6 +102,8 @@ const addStep = (fileName, fields, res) => {
                 getConnection().query(queryString, [stepId, ingredient.name, ingredient.quantity, unit], (err) => {
                     if(err){
                         reject(err)
+                        logToFile(err)
+                        return
                     }
                     resolve("ok")
                 })
@@ -109,6 +120,7 @@ const addStep = (fileName, fields, res) => {
             getConnection().query("SELECT image_url FROM recipe WHERE id = ?", [recipeId], (err, rows) => {
                 if(err){
                     console.log(err)
+                    logToFile(err)
                     return
                 }
                 fs.unlinkSync("./public/images/" + rows[0].image_url)
