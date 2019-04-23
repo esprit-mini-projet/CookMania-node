@@ -31,7 +31,7 @@ function getConnection(){
 var util = require("util")
 var log_file = fs.createWriteStream(__dirname + '/debug.log', {flags : 'w'})
 function logToFile(err){
-    log_file.write(util.format(err) + '\n');
+    log_file.write(util.format(new Date() + ", found error: " + err) + '\n');
 }
 
 router.get("/labels", (req, res) => {
